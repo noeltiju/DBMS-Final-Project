@@ -51,21 +51,31 @@ def customer_signup():
     else:
         return render_template('signup.html')
 
+global signin_attempts
+signin_attempts = 0
+
 @app.route('/customerlogin', methods=['GET', 'POST'])
 def customer_signin():
+    global signin_attempts
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        try:
-            cursor.execute(f"select * from Customer_Login where Username = '{username}' and   Password = '{password}'; ")
-            if (len(cursor.fetchall()) > 0):
-                return redirect("/")
-            else:
-                print("Incorrect login!")
+        if signin_attempts < 3:
+            username = request.form['username']
+            password = request.form['password']
+            try:
+                cursor.execute(f"select * from Customer_Login where Username = '{username}' and   Password = '{password}'; ")
+                if (len(cursor.fetchall()) > 0):
+                    signin_attempts = 0
+                    return redirect("/")
+                else:
+                    signin_attempts+=1
+                    print("Incorrect login!")
+                    return render_template('customer_login_fail.html')
+            except:
+                print("Error in query")
                 return redirect("/customerlogin")
-        except:
-            print("Error in query")
-            return redirect("/customerlogin")
+        else:
+            signin_attempts = 0
+            return render_template('customer_login_fail3.html')
     else:
         return render_template('customer.html')
     
