@@ -12,7 +12,7 @@ db = pymysql.connections.Connection(
 
 cursor = db.cursor()
 cursor.execute('USE hike')
-cursor.execute('show tables')
+cursor.execute('select * from phone_numbers')
 
 for i in cursor:
     print(i)

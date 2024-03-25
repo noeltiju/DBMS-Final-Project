@@ -36,15 +36,18 @@ def customer_signup():
     
         cursor.execute("select Customer_ID from Customer_Login order by Customer_ID desc limit 1;")
         customer_id = cursor.fetchall()[0][0] + 1
+        # try:
         try:
-            cursor.execute(f"insert into Customer_Login values({customer_id}, '{customer_first_name}', '{customer_second_name}', '{customer_third_name}', {customer_age}, '2004-02-29', '{customer_email}', 'Bronze', 0;")
-            cursor.execute(f"insert into Customer_Login values({customer_id}, '{customer_username}', '{customer_password}';")
-            cursor.execute(f"insert into Addresses values({customer_id}, '{customer_address}', {customer_postal_code};")
-            return redirect('/')
+            cursor.execute(f"insert into Customer values({customer_id}, '{customer_first_name}', '{customer_second_name}', '{customer_third_name}', {customer_age}, '2004-02-29', '{customer_email}', 'Bronze', 0);")
+            cursor.execute(f"insert into Customer_Login values({customer_id}, '{customer_username}', '{customer_password}');")
+            cursor.execute(f"insert into Addresses values({customer_id}, '{customer_address}', {customer_postal_code});")
+            cursor.execute(f"insert into Phone_Numbers values({customer_id}, '{customer_no}');")
+            connection.commit()
+            return redirect('/customerlogin')
         except:
             print("Error in query")
+            connection.rollback()
             return redirect('/customersignup')
-        return redirect('/')
     else:
         return render_template('signup.html')
 
@@ -67,7 +70,21 @@ def customer_signin():
         return render_template('customer.html')
     
 @app.route('/managerlogin', methods=['GET', 'POST'])
-def signup():
+def manager_login():
+    if request.method == 'POST':
+        manager_email = request.form['manager_email']
+        password = request.form['password']
+
+        try:
+            cursor.execute(f"select * from Manager_Login M1, Managers M2 where M1.Manager_ID = M2.Manager_ID and Email = '{manager_email}' and Password = '{password}';")
+            if (len(cursor.fetchall()) > 0):
+                return redirect('/')
+            else:
+                print("Incorrect login!")
+                return redirect('/managerlogin')
+        except:
+            print("Error in query")
+            return redirect('/managerlogin')
     return render_template('manager.html')
 
 if __name__ == '__main__':
