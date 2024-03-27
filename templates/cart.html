@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .total {
+            text-align: right;
+        }
+
+        .checkout-btn {
+            padding: 10px 20px;
+            background-color: #666;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Shopping Cart</h1>
+    <table id="cart-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Cart items will be dynamically added here -->
+        </tbody>
+    </table>
+    <div class="total">
+        Total: <span id="cart-total">$0.00</span>
+    </div>
+    <button class="checkout-btn">Checkout</button>
+
+    <script>
+      function addToCart(itemName, price) {
+    // Retrieve the cart items from localStorage
+    let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+
+    // Check if the item is already in the cart
+    const existingItem = cartItems.find(item => item.itemName === itemName);
+
+    if (existingItem) {
+        // If the item is already in the cart, update the quantity
+        existingItem.quantity++;
+    } else {
+        // If the item is not in the cart, add it with quantity 1
+        cartItems.push({ itemName, price, quantity: 1 });
+    }
+
+    // Update the cart items in localStorage
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+
+    // Update the cart display
+    displayCartItems();
+}
+
+function displayCartItems() {
+    // Retrieve the cart items from localStorage
+    const cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+
+    // Get the table body to insert rows
+    const tableBody = document.querySelector("#cart-table tbody");
+    tableBody.innerHTML = ""; // Clear existing rows
+
+    // Iterate over each item in the cart and display it in the table
+    let total = 0;
+    cartItems.forEach(item => {
+        const newRow = tableBody.insertRow(-1);
+        const nameCell = newRow.insertCell(0);
+        const priceCell = newRow.insertCell(1);
+        const quantityCell = newRow.insertCell(2);
+        const totalCell = newRow.insertCell(3);
+        const actionCell = newRow.insertCell(4);
+
+        nameCell.textContent = item.itemName;
+        priceCell.textContent = "$" + item.price.toFixed(2);
+        quantityCell.textContent = item.quantity;
+        totalCell.textContent = "$" + (item.price * item.quantity).toFixed(2);
+        actionCell.innerHTML = '<button onclick="removeItem(this)">Remove</button>';
+
+        // Calculate total price
+        total += item.price * item.quantity;
+    });
+
+    // Update the total
+    const totalElement = document.getElementById("cart-total");
+    if (isNaN(total) || total === 0) {
+        totalElement.textContent = "$0.00";
+    } else {
+        totalElement.textContent = "$" + total.toFixed(2);
+    }
+}
+
+function removeItem(button) {
+    // Retrieve the cart items from localStorage
+    let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+
+    // Get the row to remove
+    const row = button.closest("tr");
+    const itemName = row.cells[0].textContent;
+
+    // Find the index of the item to remove in the cartItems array
+    const index = cartItems.findIndex(item => item.itemName === itemName);
+
+    if (index !== -1) {
+        // Reduce the quantity by one
+        cartItems[index].quantity--;
+
+        // If the quantity is zero, remove the item from the cart
+        if (cartItems[index].quantity === 0) {
+            cartItems.splice(index, 1);
+        }
+
+        // Update the cart items in localStorage
+        localStorage.setItem("cartItems", JSON.stringify(cartItems));
+
+        // Update the cart display
+        displayCartItems();
+    }
+}
+
+// Display cart items when the page loads
+displayCartItems();
+
+
+
+        // Display cart items when the page loads
+        displayCartItems();
+    </script>
+</body>
+
+</html>

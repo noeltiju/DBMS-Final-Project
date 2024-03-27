@@ -4,20 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hike Retail Store</title>
+    <title>Trousers Catalogue - Hike Retail Store</title>
     <style>
         body {
             font-family: Georgia, 'Times New Roman', Times, serif;
             margin: 0;
             padding: 0;
-            background-image: url('XX.jpg');
             background-color: #f5f5f5;
-            background-size: cover;
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
         }
 
         .header {
@@ -34,7 +27,6 @@
             font-size: 36px;
             color: #fff;
             text-transform: uppercase;
-            cursor: pointer;
         }
 
         .login-options a {
@@ -47,33 +39,38 @@
         .container {
             max-width: 1200px;
             margin: 50px auto;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
         }
 
-        .section {
-            flex-basis: 48%;
+        .catalogue-items {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .item {
+            flex-basis: 30%;
             padding: 10px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
 
-        .section img {
+        .item img {
             width: 100%;
             border-radius: 5px;
         }
 
-        .section h2 {
-            font-size: 24px;
+        .item h3 {
+            font-size: 20px;
             color: #333;
+            margin-bottom: 10px;
+        }
+
+        .item p {
+            font-size: 16px;
+            color: #666;
             margin-bottom: 10px;
         }
     </style>
@@ -81,21 +78,35 @@
 
 <body>
     <div class="header">
-        <a href="index.html" class="logo">HIKE</a>
+        <a href="main_page.html" class="logo">HIKE</a>
         <div class="login-options">
             <a href="customer.html">Enter as Customer</a>
             <a href="manager.html">Enter as Manager</a>
         </div>
     </div>
     <div class="container">
-        <a href="mens_catalogue.html" class="section">
-            <h2>Mens</h2>
-            <img src="ss.webp" alt="Mens">
-        </a>
-        <a href="womens_catalogue.html" class="section">
-            <h2>Womens</h2>
-            <img src="oo.webp" alt="Womens">
-        </a>
+        <div class="catalogue-items">
+            <div class="item">
+                <h3>Trouser 1</h3>
+                <img src="Trouser1.jpg" alt="Trouser 1">
+                <p>Price: $20</p>
+            </div>
+            <div class="item">
+                <h3>Trouser 2</h3>
+                <img src="Trouser2.jpg" alt="Trouser 2">
+                <p>Price: $25</p>
+            </div>
+            <div class="item">
+                <h3>Trouser 3</h3>
+                <img src="Trouser3.jpg" alt="Trouser 3">
+                <p>Price: $18</p>
+            </div>
+            <div class="item">
+                <h3>Trouser 4</h3>
+                <img src="Trouser4.jpg" alt="Trouser 4">
+                <p>Price: $22</p>
+            </div>
+        </div>
     </div>
 </body>
 

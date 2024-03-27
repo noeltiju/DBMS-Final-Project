@@ -81,13 +81,13 @@
 
 <body>
     <div class="header">
-        <a href="/" class="logo">HIKE</a>
+        <a href="main_page.html" class="logo">HIKE</a>
     </div>
     <div class="container">
         <h2 style="text-align: center;">Manager Login</h2>
-        <form action="/managerlogin" method="post">
-            <input type="email" name="manager_email" placeholder="Manager Email" required><br>
-            <input type="password" name="password" placeholder="Password" required><br>
+        <form action="/manager-login" method="post">
+            <input type="text" name="manager_id" placeholder="Manager ID" required>
+            <input type="password" name="password" placeholder="Password" required>
             <input type="submit" value="Login">
         </form>
     </div>
