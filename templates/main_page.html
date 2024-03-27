@@ -10,7 +10,7 @@
             font-family: Georgia, 'Times New Roman', Times, serif;
             margin: 0;
             padding: 0;
-            background-image: url('XX.jpg');
+            background-image: url('/static/assets/bg.jpg');
             background-color: #f5f5f5;
             background-size: cover;
         }
@@ -81,20 +81,20 @@
 
 <body>
     <div class="header">
-        <a href="index.html" class="logo">HIKE</a>
+        <a class="logo">HIKE</a>
         <div class="login-options">
-            <a href="customer.html">Enter as Customer</a>
-            <a href="manager.html">Enter as Manager</a>
+            <a href="/customerlogin">Enter as Customer</a>
+            <a href="/managerlogin">Enter as Manager</a>
         </div>
     </div>
     <div class="container">
-        <a href="mens_catalogue.html" class="section">
+        <a href="/men_page" class="section">
             <h2>Mens</h2>
-            <img src="ss.webp" alt="Mens">
+            <img src="/static/assets/mens_collection.jpeg" alt="Mens">
         </a>
-        <a href="womens_catalogue.html" class="section">
+        <a href="/women_page" class="section">
             <h2>Womens</h2>
-            <img src="oo.webp" alt="Womens">
+            <img src="/static/assets/womens_collection.jpeg" alt="Womens">
         </a>
     </div>
 </body>

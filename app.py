@@ -65,7 +65,7 @@ def customer_signin():
                 cursor.execute(f"select * from Customer_Login where Username = '{username}' and   Password = '{password}'; ")
                 if (len(cursor.fetchall()) > 0):
                     signin_attempts = 0
-                    return redirect("/")
+                    return redirect("/afterloginpage")
                 else:
                     signin_attempts+=1
                     print("Incorrect login!")
@@ -96,6 +96,47 @@ def manager_login():
             print("Error in query")
             return redirect('/managerlogin')
     return render_template('manager.html')
+
+@app.route('/afterloginpage', methods=['GET', 'POST'])
+def after_login():
+    return render_template('successful_login.html')
+
+@app.route('/men_page', methods=['GET', 'POST'])
+def men_main_page():
+    return render_template('men.html')
+
+@app.route('/women_page', methods=['GET', 'POST'])
+def women_main_page():
+    return render_template('women.html')
+
+@app.route('/shirt_page', methods=['GET', 'POST'])
+def shirt_page():
+    return render_template('shirt.html')
+
+@app.route('/tshirt_page', methods=['GET', 'POST'])
+def tshirt_page():
+    return render_template('tshirt.html')
+
+@app.route('/jackets_page', methods=['GET', 'POST'])
+def jackets_page():
+    return render_template('jacket.html')
+
+@app.route('/womens_top_page', methods=['GET', 'POST'])
+def womens_top_page():
+    return render_template('top.html')
+
+@app.route('/womens_jeans_page', methods=['GET', 'POST'])
+def womens_jeans_page():
+    return render_template('jeans.html')
+
+@app.route('/womens_skirt_page', methods=['GET', 'POST'])
+def womens_skirt_page():
+    return render_template('skirt.html')
+
+@app.route('/cart_page', methods=['GET', 'POST'])
+def cart_page():
+    return render_template('cart.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
