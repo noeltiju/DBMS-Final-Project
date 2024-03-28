@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 db = SQLAlchemy()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = '192.168.32.11:3306/hike_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
@@ -15,6 +16,13 @@ connection = pymysql.connect(
     password='Appuannu12*'
 )
 
+# connection = pymysql.connect(
+#     host='192.168.32.11',
+#     port=3306,
+#     user='root',
+#     password='Appuannu12*',
+#     database='hike_db'
+# )
 cursor = connection.cursor()
 cursor.execute('USE hike')
 
