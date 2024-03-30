@@ -84,7 +84,7 @@
         .section {
             flex-basis: 45%;
             padding: 10px;
-            background-color: #000000; 
+            background-color: #121212; 
             border-radius: 5px;
             margin-bottom: 20px;
             cursor: pointer;
@@ -95,7 +95,7 @@
         }
 
         .section img {
-            width: 95%;
+            width: 100%;
             border-radius: 5px;
         }
 
@@ -110,7 +110,7 @@
             color: #fff;
             text-align: left;
             padding: 20px 20px 20px 50px;
-            position: absolute;
+            position: fixed;
             bottom: 0;
             width: calc(100% - 100px);
         }
@@ -122,31 +122,33 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <a href="/" class="logo">HIKE</a>
+        <a href="index.html" class="logo">HIKE</a>
         <div class="login-options">
             <div class="signin">
                 Sign In
                 <div class="dropdown-content">
-                    <a href="/customerlogin">Customer</a>
-                    <a href="/managerlogin">Manager</a>
+                    <a href="customer.html">Customer</a>
+                    <a href="manager.html">Manager</a>
                 </div>
             </div>
         </div>
     </div>
     <div class="container">
-        <a href="/men_page" class="section">
+        <a href="mens_catalogue.html" class="section">
             <h2>Mens</h2>
-            <img src="/static/assets/mens_collection.jpeg" alt="Mens">
+            <img src="ss.webp" alt="Mens">
         </a>
-        <a href="/women_page" class="section">
+        <a href="womens_catalogue.html" class="section">
             <h2>Womens</h2>
-            <img src="/static/assets/womens_collection.jpeg" alt="Womens">
+            <img src="oo.webp" alt="Womens">
         </a>
     </div>
     <div class="footer">
-        <a href="/">Contact us</a>
+        <a href="contact_us.html">Contact us</a>
     </div>
 </body>
+
 </html>
