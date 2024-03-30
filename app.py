@@ -1,33 +1,34 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
-
+from triggers import triggers_commands
 app = Flask(__name__)
 
 db = SQLAlchemy()
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-# app.config['SQLALCHEMY_DATABASE_URI'] = '192.168.32.11:3306/hike_db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-print("true")
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db.init_app(app)
 
-# connection = pymysql.connect(
-#     host='localhost',
-#     user='root',
-#     password='Appuannu12*'
-# )
-
-
 connection = pymysql.connect(
-    host='192.168.239.58',
-    port=3306,
-    user='kingmehul',
-    password='hike'
+    host='localhost',
+    user='root',
+    password='Appuannu12*'
 )
+
+# connection = pymysql.connect(
+#     host='192.168.239.58',
+#     port=3306,
+#     user='kingmehul',
+#     password='hike'
+# ) 
+
 cursor = connection.cursor()
-cursor.execute('USE hike')
+cursor.execute("USE hike;")
+triggers_commands(cursor)
 
 @app.route('/')
 def index():
@@ -65,16 +66,23 @@ def customer_signup():
 global signin_attempts
 signin_attempts = 0
 
+global user_id
+user_id = 0
+
 @app.route('/customerlogin', methods=['GET', 'POST'])
 def customer_signin():
     global signin_attempts
+    global user_id
     if request.method == 'POST':
         if signin_attempts < 3:
             username = request.form['username']
             password = request.form['password']
             try:
                 cursor.execute(f"select * from Customer_Login where Username = '{username}' and   Password = '{password}'; ")
-                if (len(cursor.fetchall()) > 0):
+                if cursor.rowcount > 0:
+                    row = cursor.fetchone()
+                    if row:
+                        user_id = row[0]
                     signin_attempts = 0
                     return redirect("/afterloginpage")
                 else:
@@ -148,6 +156,32 @@ def womens_skirt_page():
 def cart_page():
     return render_template('cart.html')
 
+@app.route('/productdetails', methods = ['POST'])
+def product_details():
+    data = request.get_json()
+    size = data['size']
+    product = data['product']
+
+    cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product}' and Size = '{size}';")
+    if (cursor.rowcount == 1):
+        product_id = cursor.fetchone()[0]
+        cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+
+        if (cursor.rowcount == 1):
+            cursor.execute(f"update Cart_Items set Quantity = Quantity + 1 where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+            connection.commit()
+
+        else:
+            cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, 1);")
+            connection.commit()
+
+        cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+        for i in cursor:
+            print(i)
+
+    else:
+        return jsonify({"message": "Product not found!"})
+    return jsonify({"message": "success"})
 
 if __name__ == '__main__':
     app.run(debug=True)

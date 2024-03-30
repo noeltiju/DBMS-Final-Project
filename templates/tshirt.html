@@ -144,6 +144,44 @@
     <script>
         function selectSize(button) {
             // Remove the 'selected' class from all size buttons
+            const size = button.innerText;
+
+            fetch('productdetails', {
+                method: 'POST',
+                body: JSON.stringify({
+                    size: size,
+                    product: 'T-shirt'
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+
+            .then(response => {
+                if (response.ok){
+                    console.log('Data received!')
+
+                }else{
+                    console.error('Failed to send data!')
+                }
+            })
+
+            .catch(error => {
+                console.error('Error:', error)
+            });
+
+            const sizeButtons = document.querySelectorAll('.size-btn');
+            sizeButtons.forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Add the 'selected' class to the clicked button
+            button.classList.add('selected');
+        }
+    </script>
+    <!-- <script>
+        function selectSize(button) {
+            // Remove the 'selected' class from all size buttons
             const sizeButtons = document.querySelectorAll('.size-btn');
             sizeButtons.forEach(btn => {
                 btn.classList.remove('selected');
@@ -168,7 +206,7 @@
             // Update the cart items in localStorage
             localStorage.setItem("cartItems", JSON.stringify(cartItems));
         });
-    </script>
+    </script> -->
     
 </body>
 
