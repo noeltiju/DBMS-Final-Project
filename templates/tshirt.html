@@ -137,68 +137,112 @@
             <a href="/">Sign Out</a>
         </div>
     </div>
-    <div class="container">
-        <div class="images">
-            <div class="image-container">
-                <img src="/static/assets/tshirt1.png" alt="TShirt 1" class="active">
-                <img src="/static/assets/tshirt2.png" alt="TShirt 2">
-                <img src="/static/assets/tshirt3.png" alt="TShirt 3">
-                <img src="/static/assets/tshirt4.png" alt="TShirt 4">
+    <ul>
+        {% for tshirt_name, attributes in tshirt_dict.items() %}
+            <div class="container" id="details-{{ loop.index }}">
+                <div class="images">
+                    <div class="image-container">
+                        <img src="/static/assets/tshirt1.png" alt="TShirt 1" class="active">
+                        <img src="/static/assets/tshirt2.png" alt="TShirt 2">
+                        <img src="/static/assets/tshirt3.png" alt="TShirt 3">
+                        <img src="/static/assets/tshirt4.png" alt="TShirt 4">
+                    </div>
+                    <button onclick="showNext()">Next</button>
+                    <button onclick="showPrev()">Previous</button>
+                </div>
+                <div class="details">
+                    <h2>{{ tshirt_name }}</h2>
+                    <p>Description: Relaxed-fit T-shirt with a round neck and short sleeves. Contrast graphic prints on the front and back.</p>
+                    <p>Price: ${{ attributes.price }}</p>
+                    <div class="sizes">
+                        <button class="size-btn" onclick="selectSize(this, '{{ tshirt_name }}')">S</button>
+                        <button class="size-btn" onclick="selectSize(this,'{{ tshirt_name }}')">M</button>
+                        <button class="size-btn" onclick="selectSize(this,'{{ tshirt_name }}')">L</button>
+                        <button class="size-btn" onclick="selectSize(this,'{{ tshirt_name }}')">XL</button>
+                    </div>
+                    <center><button class="add-to-cart" id="add-to-cart-btn">Add to Cart</button>
+                    </center>
+                </div>
+                <script>
+                    var container = document.querySelector('.container');
+                    const images = container.querySelectorAll('.images .image-container img');
+                    // const nextBtn = container.querySelector('.next-btn');
+                    // const prevBtn = container.querySelector('.prev-btn');
+                    let currentImageIndex = 0;
+                    var tshirtName = "{{ tshirt_name }}";
+                    
+    
+                    function showNext() {
+                        images[currentImageIndex].classList.remove('active');
+                        currentImageIndex = (currentImageIndex + 1) % images.length;
+                        images[currentImageIndex].classList.add('active');
+                    }
+            
+                    function showPrev() {
+                        images[currentImageIndex].classList.remove('active');
+                        currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+                        images[currentImageIndex].classList.add('active');
+                    }
+    
+                    // nextBtn.addEventListener('click', showNext);
+                    // prevBtn.addEventListener('click', showPrev);
+    
+                    function selectSize(button, tshirtName) {
+                        // Remove the 'selected' class from all size buttons
+                        const size = button.innerText;
+            
+                        fetch('/productdetails', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                size: size,
+                                product: tshirtName
+                            }),
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+            
+                        .then(response => {
+                            if (response.ok){
+                                console.log('Data received!')
+            
+                            }else{
+                                console.error('Failed to send data!')
+                            }
+                        })
+            
+                        .catch(error => {
+                            console.error('Error:', error)
+                        });
+            
+                        const sizeButtons = document.querySelectorAll('.size-btn');
+                        sizeButtons.forEach(btn => {
+                            btn.classList.remove('selected');
+                        });
+                        button.classList.add('selected');
+                    }
+            
+            
+                    document.getElementById("add-to-cart-btn").addEventListener("click", function() {
+                        const itemName = tshirtName;
+                        const price = 800.00;
+                        let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+                        let quantity = 1;
+                        const existingItem = cartItems.find(item => item.itemName === itemName);
+                        if (existingItem) {
+                            existingItem.quantity++;
+                        } else {
+                            cartItems.push({ itemName, price, quantity });
+                        }
+                        localStorage.setItem("cartItems", JSON.stringify(cartItems));
+                    });
+                </script>
             </div>
-            <button onclick="showNext()">Next</button>
-            <button onclick="showPrev()">Previous</button>
-        </div>
-        <div class="details">
-            <h2>T-Shirt</h2>
-            <p>Description: Relaxed-fit T-shirt with a round neck and short sleeves. Contrast graphic prints on the front and back.</p>
-            <div class="sizes">
-                <button class="size-btn" onclick="selectSize(this)">S</button>
-                <button class="size-btn" onclick="selectSize(this)">M</button>
-                <button class="size-btn" onclick="selectSize(this)">L</button>
-                <button class="size-btn" onclick="selectSize(this)">XL</button>
-            </div>
-            <center><button class="add-to-cart" id="add-to-cart-btn">Add to Cart</button>
-            </center>
-        </div>
-    </div>
-    <script>
-        let currentImageIndex = 0;
-        const images = document.querySelectorAll('.images .image-container img');
+        {% endfor %}
 
-        function showNext() {
-            images[currentImageIndex].classList.remove('active');
-            currentImageIndex = (currentImageIndex + 1) % images.length;
-            images[currentImageIndex].classList.add('active');
-        }
+    </ul>
 
-        function showPrev() {
-            images[currentImageIndex].classList.remove('active');
-            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
-            images[currentImageIndex].classList.add('active');
-        }
-
-        function selectSize(button) {
-            const sizeButtons = document.querySelectorAll('.size-btn');
-            sizeButtons.forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            button.classList.add('selected');
-        }
-
-        document.getElementById("add-to-cart-btn").addEventListener("click", function() {
-            const itemName = "T-Shirt";
-            const price = 800.00;
-            let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
-            let quantity = 1;
-            const existingItem = cartItems.find(item => item.itemName === itemName);
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cartItems.push({ itemName, price, quantity });
-            }
-            localStorage.setItem("cartItems", JSON.stringify(cartItems));
-        });
-    </script>
+    
 </body>
 
 </html>

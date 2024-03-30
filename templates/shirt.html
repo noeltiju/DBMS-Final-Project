@@ -149,7 +149,7 @@
             // Remove the 'selected' class from all size buttons
             const size = button.innerText;
 
-            fetch('productdetails', {
+            fetch('/productdetails', {
                 method: 'POST',
                 body: JSON.stringify({
                     size: size,

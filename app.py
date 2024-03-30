@@ -134,7 +134,15 @@ def shirt_page():
 
 @app.route('/tshirt_page', methods=['GET', 'POST'])
 def tshirt_page():
-    return render_template('tshirt.html')
+    cursor.execute("select * from Product_Inventory where Category = 'T-Shirt';")
+    tshirt_dict = {}
+    rows = cursor.fetchall()
+    for row in rows:
+        tshirt_dict[row[1]] = {'price': row[4], 'size': row[3]}
+
+    print(tshirt_dict)
+    return render_template('tshirt.html', tshirt_dict=tshirt_dict)
+    # return render_template('tshirt.html')
 
 @app.route('/jackets_page', methods=['GET', 'POST'])
 def jackets_page():
@@ -156,12 +164,16 @@ def womens_skirt_page():
 def cart_page():
     return render_template('cart.html')
 
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    return render_template('forgot_password.html')
+
 @app.route('/productdetails', methods = ['POST'])
 def product_details():
     data = request.get_json()
     size = data['size']
     product = data['product']
-
+    print(size, product)
     cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product}' and Size = '{size}';")
     if (cursor.rowcount == 1):
         product_id = cursor.fetchone()[0]
