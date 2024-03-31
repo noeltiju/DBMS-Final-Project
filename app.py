@@ -29,7 +29,7 @@ connection = pymysql.connect(
 
 cursor = connection.cursor()
 cursor.execute("USE hike;")
-triggers_commands(cursor)
+triggers_commands(cursor,connection)
 
 @app.route('/')
 def index():
@@ -251,5 +251,6 @@ def place_order():
         connection.commit()
 
     return render_template('order.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = current_date, order_id = order_id)
+
 if __name__ == '__main__':
     app.run(debug=True)
