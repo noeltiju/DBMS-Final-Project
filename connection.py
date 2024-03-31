@@ -12,7 +12,7 @@ db = pymysql.connections.Connection(
 
 cursor = db.cursor()
 cursor.execute('USE hike')
-cursor.execute('select * from phone_numbers')
+cursor.execute("select * from Order_Items where Order_ID = 11;")
 
 for i in cursor:
     print(i)

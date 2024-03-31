@@ -222,20 +222,7 @@
                         button.classList.add('selected');
                     }
             
-            
-                    document.getElementById("add-to-cart-btn").addEventListener("click", function() {
-                        const itemName = tshirtName;
-                        const price = 800.00;
-                        let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
-                        let quantity = 1;
-                        const existingItem = cartItems.find(item => item.itemName === itemName);
-                        if (existingItem) {
-                            existingItem.quantity++;
-                        } else {
-                            cartItems.push({ itemName, price, quantity });
-                        }
-                        localStorage.setItem("cartItems", JSON.stringify(cartItems));
-                    });
+        
                 </script>
             </div>
         {% endfor %}

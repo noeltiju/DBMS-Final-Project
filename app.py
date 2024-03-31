@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 from triggers import triggers_commands
+from datetime import datetime
 app = Flask(__name__)
 
 db = SQLAlchemy()
@@ -140,9 +141,7 @@ def tshirt_page():
     for row in rows:
         tshirt_dict[row[1]] = {'price': row[4], 'size': row[3]}
 
-    print(tshirt_dict)
     return render_template('tshirt.html', tshirt_dict=tshirt_dict)
-    # return render_template('tshirt.html')
 
 @app.route('/jackets_page', methods=['GET', 'POST'])
 def jackets_page():
@@ -162,7 +161,22 @@ def womens_skirt_page():
 
 @app.route('/cart_page', methods=['GET', 'POST'])
 def cart_page():
-    return render_template('cart.html')
+    cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
+    rows = cursor.fetchall()
+    total_price = 0
+    cart_dict = {}
+    for row in rows:
+        quantity = row[2]
+        product_id = row[1]
+        cursor.execute(f"select Product_Name, Price, Size from Product_Inventory where Product_ID = {product_id};")
+        product_details = cursor.fetchone()
+        product_name = product_details[0]
+        price = product_details[1]
+        size = product_details[2]
+        total_price += price * quantity
+
+        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size}
+    return render_template('cart_new.html', cart_dict=cart_dict, total_price=total_price)
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
@@ -173,7 +187,6 @@ def product_details():
     data = request.get_json()
     size = data['size']
     product = data['product']
-    print(size, product)
     cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product}' and Size = '{size}';")
     if (cursor.rowcount == 1):
         product_id = cursor.fetchone()[0]
@@ -195,5 +208,44 @@ def product_details():
         return jsonify({"message": "Product not found!"})
     return jsonify({"message": "success"})
 
+@app.route('/placeorder', methods=['GET', 'POST'])
+def place_order():
+    cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
+    row = cursor.fetchone()
+    user_name = row[0] + " " + row[1] + " " + row[2]
+    cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
+    rows = cursor.fetchall()
+    total_price = 0
+    cart_dict = {}
+    for row in rows:
+        quantity = row[2]
+        product_id = row[1]
+        cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id};")
+        product_details = cursor.fetchone()
+        product_name = product_details[0]
+        price = product_details[1]
+        size = product_details[2]
+        total_price += price * quantity
+        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_details[3]}
+    
+    cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
+    order_id = cursor.fetchall()[0][0] + 1
+
+    cursor.execute("select Delivery_ID from Deliveries order by Delivery_ID desc limit 1;")
+    delivery_id = cursor.fetchall()[0][0] + 1
+
+    cursor.execute(f"insert into Orders values({order_id}, '2024-03-31', {delivery_id}, {user_id}, {total_price}, 'Pending');")
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, 'Pending');")
+    connection.commit()
+
+
+    for product_name, attributes in cart_dict.items():
+        cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
+        connection.commit()
+        cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
+        connection.commit()
+
+    return render_template('order.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = '2024-03-31', order_id = order_id)
 if __name__ == '__main__':
     app.run(debug=True)
