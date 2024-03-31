@@ -13,7 +13,7 @@ db = pymysql.connections.Connection(
 cursor = db.cursor()
 cursor.execute('show databases;')
 cursor.execute('use hike;')
-cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
+cursor.execute("select * from Customer")
 for i in cursor:
     print(i)
 
