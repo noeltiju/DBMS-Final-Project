@@ -2,7 +2,7 @@ import pymysql
 
 hostname = 'localhost'
 user = 'root'
-password = 'Appuannu12*'
+password = 'hike'
 
 db = pymysql.connections.Connection(
     host = hostname,
@@ -11,9 +11,9 @@ db = pymysql.connections.Connection(
 )
 
 cursor = db.cursor()
-cursor.execute('USE hike')
-cursor.execute("select * from Order_Items where Order_ID = 11;")
-
+cursor.execute('show databases;')
+cursor.execute('use hike;')
+cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
 for i in cursor:
     print(i)
 

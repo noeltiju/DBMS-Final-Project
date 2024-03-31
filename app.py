@@ -17,7 +17,7 @@ db.init_app(app)
 connection = pymysql.connect(
     host='localhost',
     user='root',
-    password='Appuannu12*'
+    password='hike'
 )
 
 # connection = pymysql.connect(
@@ -229,12 +229,16 @@ def place_order():
         cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_details[3]}
     
     cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
-    order_id = cursor.fetchall()[0][0] + 1
-
+    if cursor.rowcount == 0:
+        order_id = 1
+    else:
+        order_id = cursor.fetchone()[0][0] + 1
+    
     cursor.execute("select Delivery_ID from Deliveries order by Delivery_ID desc limit 1;")
-    delivery_id = cursor.fetchall()[0][0] + 1
-
-    cursor.execute(f"insert into Orders values({order_id}, '2024-03-31', {delivery_id}, {user_id}, {total_price}, 'Pending');")
+    if cursor.rowcount == 0:
+        delivery_id = 1
+    else:
+        delivery_id = cursor.fetchone()[0][0] + 1
     current_date = datetime.now().strftime('%Y-%m-%d')
     cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, 'Pending');")
     connection.commit()
@@ -246,6 +250,6 @@ def place_order():
         cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
         connection.commit()
 
-    return render_template('order.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = '2024-03-31', order_id = order_id)
+    return render_template('order.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = current_date, order_id = order_id)
 if __name__ == '__main__':
     app.run(debug=True)
