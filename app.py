@@ -123,41 +123,77 @@ def after_login():
 
 @app.route('/men_page', methods=['GET', 'POST'])
 def men_main_page():
-    return render_template('men.html')
+    cursor.execute("select distinct Category from Product_Inventory where Gender = 'Male';")
+    rows = cursor.fetchall()
+    categories = [row[0] for row in rows]
+    return render_template('categories.html', categories=categories, department='Male')
 
 @app.route('/women_page', methods=['GET', 'POST'])
 def women_main_page():
-    return render_template('women.html')
+    cursor.execute("select distinct Category from Product_Inventory where Gender = 'Female';")
+    rows = cursor.fetchall()
+    categories = [row[0] for row in rows]
+    return render_template('categories.html', categories=categories, department='Female')
 
 @app.route('/shirt_page', methods=['GET', 'POST'])
 def shirt_page():
-    return render_template('shirt.html')
+    cursor.execute("select Product_Inventory.Product_Name, Size, Price, Description from Product_Inventory , Product_Description where Category = 'Shirt' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
+    shirt_dict = {}
+    rows = cursor.fetchall()
+    for row in rows:
+        shirt_dict[row[0]] = {'description': row[1], 'price': row[3], 'size': row[2]}
+
+    return render_template('product_page.html', product_dict=shirt_dict, category='Shirt')
 
 @app.route('/tshirt_page', methods=['GET', 'POST'])
 def tshirt_page():
-    cursor.execute("select * from Product_Inventory where Category = 'T-Shirt';")
+    cursor.execute("select Product_Inventory.Product_Name, Size, Price, Description from Product_Inventory , Product_Description where Category = 'T-Shirt' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
     tshirt_dict = {}
     rows = cursor.fetchall()
     for row in rows:
-        tshirt_dict[row[1]] = {'price': row[4], 'size': row[3]}
+        tshirt_dict[row[0]] = {'description': row[1], 'price': row[3], 'size': row[2]}
 
-    return render_template('tshirt.html', tshirt_dict=tshirt_dict)
+    return render_template('product_page.html', product_dict=tshirt_dict, category='T-Shirt')
 
 @app.route('/jackets_page', methods=['GET', 'POST'])
 def jackets_page():
-    return render_template('jacket.html')
+    cursor.execute("select Product_Inventory.Product_Name, Size, Price, Description from Product_Inventory , Product_Description where Category = 'Jackets' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
+    jacket_dict = {}
+    rows = cursor.fetchall()
+    for row in rows:
+        jacket_dict[row[0]] = {'description': row[1], 'price': row[3], 'size': row[2]}
+
+    return render_template('product_page.html', product_dict=jacket_dict, category='Jackets')
 
 @app.route('/womens_top_page', methods=['GET', 'POST'])
 def womens_top_page():
-    return render_template('top.html')
+    cursor.execute("select Product_Inventory.Product_Name, Size, Price, Description from Product_Inventory , Product_Description where Category = 'Top' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
+    top_dict = {}
+    rows = cursor.fetchall()
+    for row in rows:
+        top_dict[row[0]] = {'description': row[1], 'price': row[3], 'size': row[2]}
+
+    return render_template('product_page.html', product_dict=top_dict, category='Top')
 
 @app.route('/womens_jeans_page', methods=['GET', 'POST'])
 def womens_jeans_page():
-    return render_template('jeans.html')
+    cursor.execute("select Product_Inventory.Product_Name, Size, Price, Description from Product_Inventory , Product_Description where Category = 'Jeans' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
+    jeans_dict = {}
+    rows = cursor.fetchall()
+    for row in rows:
+        jeans_dict[row[0]] = {'description': row[1], 'price': row[3], 'size': row[2]}
+
+    return render_template('product_page.html', product_dict=jeans_dict, category='Jeans')
 
 @app.route('/womens_skirt_page', methods=['GET', 'POST'])
 def womens_skirt_page():
-    return render_template('skirt.html')
+    cursor.execute("select Product_Inventory.Product_Name, Size, Price, Description from Product_Inventory , Product_Description where Category = 'Skirt' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
+    skirt_dict = {}
+    rows = cursor.fetchall()
+    for row in rows:
+        skirt_dict[row[0]] = {'description': row[1], 'price': row[3], 'size': row[2]}
+
+    return render_template('product_page.html', product_dict=skirt_dict, category='Skirt')
 
 @app.route('/cart_page', methods=['GET', 'POST'])
 def cart_page():
@@ -184,29 +220,11 @@ def forgot_password():
 
 @app.route('/productdetails', methods = ['POST'])
 def product_details():
-    data = request.get_json()
-    size = data['size']
-    product = data['product']
-    cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product}' and Size = '{size}';")
-    if (cursor.rowcount == 1):
-        product_id = cursor.fetchone()[0]
-        cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+    if request.method == 'POST':
+        product_name = request.form['product_name']
+        return render_template('product_details.html', product_name = product_name)
 
-        if (cursor.rowcount == 1):
-            cursor.execute(f"update Cart_Items set Quantity = Quantity + 1 where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
-            connection.commit()
-
-        else:
-            cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, 1);")
-            connection.commit()
-
-        cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
-        for i in cursor:
-            print(i)
-
-    else:
-        return jsonify({"message": "Product not found!"})
-    return jsonify({"message": "success"})
+    return
 
 @app.route('/placeorder', methods=['GET', 'POST'])
 def place_order():
@@ -252,5 +270,23 @@ def place_order():
 
     return render_template('order.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = current_date, order_id = order_id)
 
+@app.route('/upi', methods=['GET', 'POST'])
+def upi_payment():
+    return render_template('upi_payment.html')
+
+@app.route('/category', methods=['GET', 'POST'])
+def category_page():
+    if (request.method == 'POST'):
+        category = request.form['category']
+        dept  = request.form['department']
+        cursor.execute(f"select Product_Inventory.Product_Name, Price, Description from Product_Inventory , Product_Description where Category = '{category}' and Gender = '{dept}' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
+        product_dict = {}
+        rows = cursor.fetchall()
+
+        for row in rows:
+            product_dict[row[0]] = {'description': row[1], 'price': row[2]}
+        print(product_dict)
+        return render_template('product_page.html', product_dict=product_dict, category=category, department = dept)
+    return render_template('/')
 if __name__ == '__main__':
     app.run(debug=True)

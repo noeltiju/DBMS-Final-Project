@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T-Shirt Details</title>
+    <title>{{ category }} Details</title>
     <style>
         body {
             font-family: Georgia, 'Times New Roman', Times, serif;
@@ -138,7 +138,7 @@
         </div>
     </div>
     <ul>
-        {% for tshirt_name, attributes in tshirt_dict.items() %}
+        {% for product_name, attributes in product_dict.items() %}
             <div class="container" id="details-{{ loop.index }}">
                 <div class="images">
                     <div class="image-container">
@@ -151,14 +151,14 @@
                     <button onclick="showPrev()">Previous</button>
                 </div>
                 <div class="details">
-                    <h2>{{ tshirt_name }}</h2>
-                    <p>Description: Relaxed-fit T-shirt with a round neck and short sleeves. Contrast graphic prints on the front and back.</p>
-                    <p>Price: ${{ attributes.price }}</p>
+                    <h2>{{ product_name }}</h2>
+                    <p>Description: ${{ attributes.price }}</p>
+                    <p>Price: {{ attributes.price }}</p>
                     <div class="sizes">
-                        <button class="size-btn" onclick="selectSize(this, '{{ tshirt_name }}')">S</button>
-                        <button class="size-btn" onclick="selectSize(this,'{{ tshirt_name }}')">M</button>
-                        <button class="size-btn" onclick="selectSize(this,'{{ tshirt_name }}')">L</button>
-                        <button class="size-btn" onclick="selectSize(this,'{{ tshirt_name }}')">XL</button>
+                        <button class="size-btn" onclick="selectSize(this, '{{ product_name }}')">S</button>
+                        <button class="size-btn" onclick="selectSize(this,'{{ product_name }}')">M</button>
+                        <button class="size-btn" onclick="selectSize(this,'{{ product_name }}')">L</button>
+                        <button class="size-btn" onclick="selectSize(this,'{{ product_name }}')">XL</button>
                     </div>
                     <center><button class="add-to-cart" id="add-to-cart-btn">Add to Cart</button>
                     </center>
@@ -169,7 +169,7 @@
                     // const nextBtn = container.querySelector('.next-btn');
                     // const prevBtn = container.querySelector('.prev-btn');
                     let currentImageIndex = 0;
-                    var tshirtName = "{{ tshirt_name }}";
+                    var product_name = "{{ product_name }}";
                     
     
                     function showNext() {
@@ -187,7 +187,7 @@
                     // nextBtn.addEventListener('click', showNext);
                     // prevBtn.addEventListener('click', showPrev);
     
-                    function selectSize(button, tshirtName) {
+                    function selectSize(button, product_name) {
                         // Remove the 'selected' class from all size buttons
                         const size = button.innerText;
             
@@ -195,7 +195,7 @@
                             method: 'POST',
                             body: JSON.stringify({
                                 size: size,
-                                product: tshirtName
+                                product: product_name
                             }),
                             headers: {
                                 'Content-Type': 'application/json'

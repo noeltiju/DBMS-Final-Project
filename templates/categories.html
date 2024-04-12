@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart - Hike Retail Store</title>
+    <title>Hike</title>
     <style>
         body {
             font-family: Georgia, 'Times New Roman', Times, serif;
@@ -124,7 +124,7 @@
         .cart-container {
             display: flex;
             justify-content: space-between;
-            max-width: 1200px;
+            /* max-width: 1200px; */
             margin: 50px auto;
             align-items: flex-start;
         }
@@ -135,13 +135,16 @@
         }
 
         .item {
+            margin-left: 25px;
             display: flex;
             flex-direction: column;
-            padding: 18px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            padding: 50px;
+            /* width: 50%; */
+            width: 750px;
         }
 
         .item h3 {
@@ -158,73 +161,24 @@
             overflow-wrap: break-word;
         }
 
-        .item .remove-from-cart {
-            background-color: #cd3015;
+        .item .go-to-page {
+            background-color: #3498db; /* Blue color */
+            position: absolute;
+            margin-left: 35%;
             color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             padding: 10px 20px;
             font-size: 16px;
-        }
-
-        .additional-content {
-            flex: 0 0 300px;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 200px;
             text-align: center;
         }
 
-        .order-summary {
-            margin-top: 20px;
+        .item .go-to-page:hover {
+            background-color: #2980b9; /* Darker blue color on hover */
         }
-
-        .order-summary h3 {
-            text-align: left;
-        }
-
-        .order-summary p {
-            text-align: left;
-        }
-
-        .payment-methods {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-            text-align: left;
-        }
-
-        .payment-methods button {
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #45474B;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .payment-methods button:hover {
-            background-color: #02f53b;
-        }
-
-        .place-order-button {
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px 20px;
-            font-size: 18px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .place-order-button:hover {
-            background-color: #0056b3;
-        }
+       
     </style>
 </head>
 
@@ -233,29 +187,21 @@
         <a href="/" class="logo">HIKE</a>
     </div>
     <div class="cart-container">
+        {% for category_name in categories %}
         <div class="cart-items">
-            {% for product_name, attributes in cart_dict.items() %}
             <div class="item">
-                <h3>{{ product_name }}</h3>
-                <p>Quantity: {{ attributes['quantity'] }}</p>
-                <p>Price: {{ attributes['price'] }}</p>
-                <p>Size: {{ attributes['size'] }}</p>
-                <button class="remove-from-cart">Remove from Cart</button>
+                <h3>{{ category_name }}</h3>
+                <form action="/category" method="POST">
+                    <input type="hidden" name="category" value="{{ category_name }}">
+                    <input type="hidden" name="department" value="{{ department }}">
+                    <button class="go-to-page" type="submit">Buy Now</button>
+                </form>
             </div>
-            {% endfor %}
         </div>
-        <div class="additional-content">
-            <div class="order-summary">
-                <h3>Order Summary</h3>
-                <p>Total Amount: {{ total_price }}</p>
-            </div>
-            <div class="payment-methods">
-                <button>Cash on Delivery (COD)</button>
-                <button onclick="location.href='/upi'">UPI</button>
-                <button>Credit/Debit Card</button>
-            </div>
-            <button class="place-order-button" onclick="location.href='/placeorder'">Place Order</button>
-        </div>
+        {% endfor %}
+            
+    </div>
+
     </div>
     <div class="footer">
         <a href="/">Contact us</a>

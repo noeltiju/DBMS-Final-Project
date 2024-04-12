@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh; /* Adjust as needed */
+    }
+
+    .qr-code {
+      max-width: 200px;
+      margin: 10px;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #45474B;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Align buttons horizontally */
+      gap: 10px;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    /* Apply styles to buttons inside .options */
+    .options button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #45474B;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+
+  <title>QR Code Generator</title>
+</head>
+
+<body>
+  <div class="container">
+    <img src="../static/assets/upi.png" class="qr-code img-thumbnail img-responsive" />
+
+    <div class="options">
+      <button type="button" class="btn button" onclick="location.href='/placeorder'" id="paid">Paid</button>
+      <button type="button" class="btn button" id="cancel">Cancel</button>
+    </div>
+
+  </div>
+</body>
+
+</html>
