@@ -13,7 +13,8 @@ db = pymysql.connections.Connection(
 cursor = db.cursor()
 cursor.execute('show databases;')
 cursor.execute('use hike;')
-cursor.execute("select * from Customer")
+cursor.execute("select * from Cart_Items;")
+db.commit()
 for i in cursor:
     print(i)
 
