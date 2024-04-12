@@ -39,112 +39,32 @@
             align-items: center;
         }
 
-        .signin {
-            margin-left: 50px;
-            font-size: 20px;
-            color: #fff;
-            text-decoration: none;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: -50%;
-            background-color: #45474B;
-            min-width: 160px;
-            z-index: 1;
-        }
-
-        .dropdown-content a {
-            padding: 12px 16px;
-            display: block;
-            color: #fff;
-            text-decoration: none;
-        }
-
-        .dropdown-content a:hover {
-            background-color: #45474B;
-        }
-
-        .signin:hover .dropdown-content {
-            display: block;
-        }
-
         .container {
-            max-width: 800px;
-            margin: 50px auto;
             display: flex;
-            justify-content: space-between;
             flex-wrap: wrap;
-        }
-
-        .section {
-            flex-basis: 45%;
-            padding: 10px;
-            background-color: #000000;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .section img {
-            width: 95%;
-            border-radius: 5px;
-        }
-
-        .section h2 {
-            font-size: 24px;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-
-        .footer {
-            background-color: #45474B;
-            color: #fff;
-            text-align: left;
-            padding: 20px 20px 20px 50px;
-            position: absolute;
-            bottom: 0;
-            width: calc(100% - 100px);
-        }
-
-        .footer a {
-            font-size: 20px;
-            color: #fff;
-            text-decoration: none;
-        }
-
-        .cart-container {
-            display: flex;
             justify-content: space-between;
-            /* max-width: 1200px; */
-            margin: 50px auto;
-            align-items: flex-start;
-        }
-
-        .cart-items {
-            flex: 1;
-            margin-right: 20px;
+            align-items: center;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
         }
 
         .item {
-            margin-left: 25px;
-            display: flex;
-            flex-direction: column;
+            width: calc(50% - 20px);
+            max-width: 350px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            padding: 50px;
-            /* width: 50%; */
-            width: 750px;
+            padding: 20px;
+            margin-bottom: 40px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .item img {
+            width: 100%;
+            border-radius: 5px;
+            margin-bottom: 10px;
         }
 
         .item h3 {
@@ -161,47 +81,64 @@
             overflow-wrap: break-word;
         }
 
-        .item .go-to-page {
-            background-color: #3498db; /* Blue color */
+        .go-to-page {
             position: absolute;
-            margin-left: 35%;
+            bottom: 20px;
+            right: 20px;
+            background-color: #3498db;
             color: #fff;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             padding: 10px 20px;
             font-size: 16px;
-            width: 200px;
-            text-align: center;
         }
 
-        .item .go-to-page:hover {
-            background-color: #2980b9; /* Darker blue color on hover */
+        .go-to-page:hover {
+            background-color: #0019fb;
         }
-       
+
+        .footer {
+            background-color: #45474B;
+            color: #fff;
+            text-align: left;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+        }
+
+        .footer a {
+            font-size: 20px;
+            color: #fff;
+            text-decoration: none;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <a href="/" class="logo">HIKE</a>
+        <a class="logo">HIKE</a>
+        <div class="login-options">
+            <a href="/cart_page">Cart</a>
+            <a href="/">Sign Out</a>
+            
+        </div>
     </div>
-    <div class="cart-container">
+    <div class="container">
         {% for category_name in categories %}
-        <div class="cart-items">
-            <div class="item">
-                <h3>{{ category_name }}</h3>
-                <form action="/category" method="POST">
-                    <input type="hidden" name="category" value="{{ category_name }}">
-                    <input type="hidden" name="department" value="{{ department }}">
-                    <button class="go-to-page" type="submit">Buy Now</button>
-                </form>
-            </div>
+        <div class="item">
+            <img src="../static/assets/tshirt1.png" alt="{{ category_name }}">
+            <h3>{{ category_name }}</h3>
+            <form action="/category" method="POST">
+                <input type="hidden" name="category" value="{{ category_name }}">
+                <input type="hidden" name="department" value="{{ department }}">
+                <button class="go-to-page" type="submit">Buy Now</button>
+            </form>
         </div>
         {% endfor %}
-            
-    </div>
-
     </div>
     <div class="footer">
         <a href="/">Contact us</a>

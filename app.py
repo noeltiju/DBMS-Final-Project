@@ -6,26 +6,26 @@ from datetime import datetime
 app = Flask(__name__)
 
 db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-connection = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='hike'
-)
-
 # connection = pymysql.connect(
-#     host='192.168.239.58',
-#     port=3306,
-#     user='kingmehul',
+#     host='localhost',
+#     user='root',
 #     password='hike'
-# ) 
+# )
+
+connection = pymysql.connect(
+    host='192.168.239.58',
+    port=3306,
+    user='udayk',
+    password='hike'
+) 
 
 cursor = connection.cursor()
 cursor.execute("USE hike;")
@@ -218,14 +218,6 @@ def cart_page():
 def forgot_password():
     return render_template('forgot_password.html')
 
-@app.route('/productdetails', methods = ['POST'])
-def product_details():
-    if request.method == 'POST':
-        product_name = request.form['product_name']
-        return render_template('product_details.html', product_name = product_name)
-
-    return
-
 @app.route('/placeorder', methods=['GET', 'POST'])
 def place_order():
     cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
@@ -284,9 +276,29 @@ def category_page():
         rows = cursor.fetchall()
 
         for row in rows:
-            product_dict[row[0]] = {'description': row[1], 'price': row[2]}
-        print(product_dict)
+            product_dict[row[0]] = {'description': row[2], 'price': row[1]}
         return render_template('product_page.html', product_dict=product_dict, category=category, department = dept)
     return render_template('/')
+
+@app.route('/product_details', methods = ['POST'])
+def product_details():
+    if request.method == 'POST':
+        product_name = request.form['product_name']
+        cursor.execute(f"select Price from Product_Inventory where Product_Name = '{product_name}';")
+        product_price = cursor.fetchone()[0]
+
+        cursor.execute(f"select distinct Size from Product_Inventory where Product_Name = '{product_name}' and Stock > 0;")
+        product_sizes = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(f"select Description from Product_Description where Product_Name = '{product_name}';")
+        product_description = cursor.fetchone()[0]
+        return render_template('product_details_page.html', product_name = product_name, product_price = product_price, sizes = product_sizes, product_description = product_description)
+
+    return redirect('/')
+
+@app.route('/addtocart', methods=['POST'])
+def add_to_cart():
+    data = request.json
+    print(data)
 if __name__ == '__main__':
     app.run(debug=True)
