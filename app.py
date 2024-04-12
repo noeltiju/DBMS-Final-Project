@@ -137,6 +137,7 @@ def women_main_page():
 
 @app.route('/cart_page', methods=['GET', 'POST'])
 def cart_page():
+    print("Entered cart_page")
     cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
     rows = cursor.fetchall()
     total_price = 0
@@ -236,7 +237,7 @@ def product_details():
 
     return redirect('/')
 
-@app.route('/addtocart', methods=['POST'])
+@app.route('/addtocart', methods=['GET','POST'])
 def add_to_cart():
     data = request.json
 
@@ -255,13 +256,19 @@ def add_to_cart():
         else:
             cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
             connection.commit()
-        
-        cursor.execute("select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
-        for i in cursor:
-            print(i)
+
     else:
         print("Product not available")
         return redirect('/men_page')
     return redirect('/cart_page')
+
+@app.route('/remove_from_cart', methods=['GET','POST'])
+def removing_item():
+    data = request.json
+    product_name = data['product_name']
+
+    cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID in (select Product_ID from Product_Inventory where Product_Name = '{product_name}');")
+    connection.commit()
+    return redirect(url_for('cart_page'), code=302)
 if __name__ == '__main__':
     app.run(debug=True)

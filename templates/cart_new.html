@@ -240,7 +240,8 @@
                 <p>Quantity: {{ attributes['quantity'] }}</p>
                 <p>Price: {{ attributes['price'] }}</p>
                 <p>Size: {{ attributes['size'] }}</p>
-                <button class="remove-from-cart">Remove from Cart</button>
+                <button class="remove-from-cart" onclick="removeFromCart('{{ product_name }}')">Remove from Cart</button>
+            </div>
             </div>
             {% endfor %}
         </div>
@@ -260,6 +261,25 @@
     <div class="footer">
         <a href="/">Contact us</a>
     </div>
+    <script>
+        function removeFromCart(product_name) {
+            fetch('/remove_from_cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    product_name: product_name
+                })
+            }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+        }
+    </script>
+
 </body>
 
 </html>
