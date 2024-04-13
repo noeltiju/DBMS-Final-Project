@@ -33,7 +33,7 @@ triggers_commands(cursor,connection)
 
 @app.route('/')
 def index():
-    return redirect('/customerlogin')
+    return redirect('/managerlogin')
 
 @app.route('/customersignup', methods=['GET', 'POST'])
 def customer_signup():
@@ -108,7 +108,7 @@ def manager_login():
         try:
             cursor.execute(f"select * from Manager_Login M1, Managers M2 where M1.Manager_ID = M2.Manager_ID and Email = '{manager_email}' and Password = '{password}';")
             if (len(cursor.fetchall()) > 0):
-                return redirect('/')
+                return redirect('/manager_page')
             else:
                 print("Incorrect login!")
                 return redirect('/managerlogin')
@@ -297,5 +297,8 @@ def removing_item():
     
     return redirect('/cart_page')
 
+@app.route('/manager_page', methods=['GET', 'POST'])
+def manager_main_page():
+    return render_template('manager_main_page.html')
 if __name__ == '__main__':
     app.run(debug=True)
