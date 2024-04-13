@@ -33,7 +33,7 @@ triggers_commands(cursor,connection)
 
 @app.route('/')
 def index():
-    return render_template('main_page.html')
+    return redirect('/customerlogin')
 
 @app.route('/customersignup', methods=['GET', 'POST'])
 def customer_signup():
@@ -85,7 +85,7 @@ def customer_signin():
                     if row:
                         user_id = row[0]
                     signin_attempts = 0
-                    return redirect("/afterloginpage")
+                    return redirect("/main_page")
                 else:
                     signin_attempts+=1
                     print("Incorrect login!")
@@ -117,7 +117,7 @@ def manager_login():
             return redirect('/managerlogin')
     return render_template('manager.html')
 
-@app.route('/afterloginpage', methods=['GET', 'POST'])
+@app.route('/main_page', methods=['GET', 'POST'])
 def after_login():
     return render_template('successful_login.html')
 
@@ -137,24 +137,35 @@ def women_main_page():
 
 @app.route('/cart_page', methods=['GET', 'POST'])
 def cart_page():
-    print("Entered cart_page")
     cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
     rows = cursor.fetchall()
     total_price = 0
     cart_dict = {}
-    for row in rows:
-        quantity = row[2]
-        product_id = row[1]
-        cursor.execute(f"select Product_Name, Price, Size from Product_Inventory where Product_ID = {product_id};")
-        product_details = cursor.fetchone()
-        product_name = product_details[0]
-        price = product_details[1]
-        size = product_details[2]
-        total_price += price * quantity
+    if rows:
+        for row in rows:
+            quantity = row[2]
+            product_id = row[1]
+            cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id};")
+            product_details = cursor.fetchone()
+            if product_details:
+                product_name = product_details[0]
+                price = product_details[1]
+                size = product_details[2]
+                product_id = product_details[3]
+                total_price += price * quantity
 
-        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size}
-    return render_template('cart_new.html', cart_dict=cart_dict, total_price=total_price)
-
+                cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'status' : 'Available', 'product_id': product_id}
+            else:
+                cursor.execute(f"select Product_Name, Price, Size from Product_Inventory where Product_ID = {product_id};")
+                product_details = cursor.fetchone()
+                product_name = product_details[0]
+                price = product_details[1]
+                size = product_details[2]
+                product_id = product_details[3]
+                cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'status' : 'Not Available', 'product_id': product_id}
+        return render_template('cart_new.html', cart_dict=cart_dict, total_price=total_price)
+    else:
+        return render_template('cart_empty.html')
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     return render_template('forgot_password.html')
@@ -166,6 +177,8 @@ def place_order():
     user_name = row[0] + " " + row[1] + " " + row[2]
     cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
     rows = cursor.fetchall()
+    if len(rows) == 0:
+        return render_template('/cart_page')
     total_price = 0
     cart_dict = {}
     for row in rows:
@@ -177,7 +190,7 @@ def place_order():
         price = product_details[1]
         size = product_details[2]
         total_price += price * quantity
-        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_details[3]}
+        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size}
     
     cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
     if cursor.rowcount == 0:
@@ -197,6 +210,14 @@ def place_order():
 
     for product_name, attributes in cart_dict.items():
         cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
+        connection.commit()
+        cursor.execute(f"select Stock from Product_Inventory where Product_ID = {attributes['product_id']};")
+        stock = cursor.fetchone()[0]
+        if stock < attributes['quantity']:
+            print("Stock not available")
+            return redirect('/cart_page')
+        
+        cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
         connection.commit()
         cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
         connection.commit()
@@ -265,10 +286,15 @@ def add_to_cart():
 @app.route('/remove_from_cart', methods=['GET','POST'])
 def removing_item():
     data = request.json
-    product_name = data['product_name']
+    product_id = data['product_id']
+    try:
+        cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+        connection.commit()
+    except:
+        print("Error in query")
+        print(product_id)
+    
+    return redirect('/cart_page')
 
-    cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID in (select Product_ID from Product_Inventory where Product_Name = '{product_name}');")
-    connection.commit()
-    return redirect(url_for('cart_page'), code=302)
 if __name__ == '__main__':
     app.run(debug=True)
