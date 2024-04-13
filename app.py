@@ -184,19 +184,20 @@ def place_order():
     for row in rows:
         quantity = row[2]
         product_id = row[1]
-        cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id};")
+        cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id} and Stock > {quantity};")
         product_details = cursor.fetchone()
         product_name = product_details[0]
         price = product_details[1]
         size = product_details[2]
+        product_id = product_details[3]
         total_price += price * quantity
-        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size}
+        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_id}
     
     cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
     if cursor.rowcount == 0:
         order_id = 1
     else:
-        order_id = cursor.fetchone()[0][0] + 1
+        order_id = cursor.fetchone()[0] + 1
     
     cursor.execute("select Delivery_ID from Deliveries order by Delivery_ID desc limit 1;")
     if cursor.rowcount == 0:
