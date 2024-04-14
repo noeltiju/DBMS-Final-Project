@@ -232,19 +232,6 @@
                 },
                 body: JSON.stringify({ size, name, quantity })
             })
-            .then(response => {
-                if (response.ok) {
-                    // Handle successful response
-                    console.log('Item added to cart successfully');
-                } else {
-                    // Handle error response
-                    console.error('Failed to add item to cart');
-                }
-            })
-            .catch(error => {
-                // Handle network error
-                console.error('Failed to make request:', error);
-            });
         }
 
         document.getElementById("add-to-cart-btn").addEventListener("click", addToCart);

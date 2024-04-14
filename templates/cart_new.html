@@ -233,6 +233,9 @@
             <div class="place-order-container">
                 <button onclick="payment_method()" class="place-order-button">Place Order</button>
             </div>
+            <div class="place-order-container">
+                <button onclick="location.href = '/order_confirmation'" class="place-order-button">Check Order Details</button>
+            </div>
         </div>
     </div>
     <div class="footer">
@@ -267,11 +270,7 @@
                         address: selected_address,
                         phone_number: selected_phone_number
                     })
-                }).then(response => {
-                    console.log("Order placed successfully.");
-                }).catch(error => {
-                    console.error("Error placing order:", error);
-                });
+                })
             }
         }
         function removeFromCart(product_id) {

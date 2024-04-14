@@ -70,6 +70,8 @@ signin_attempts = 0
 global user_id
 user_id = 0
 
+global user_details
+global product_details
 @app.route('/customerlogin', methods=['GET', 'POST'])
 def customer_signin():
     global signin_attempts
@@ -177,68 +179,76 @@ def forgot_password():
 
 @app.route('/place_order', methods=['POST'])
 def place_order():
-    payment_status = request.json['payment_status']
-    address = request.json['address']
-    phone_number = str(request.json['phone_number']).strip()
-    cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
-    row = cursor.fetchone()
-    user_name = row[0] + " " + row[1] + " " + row[2]
-    cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
-    rows = cursor.fetchall()
-    if len(rows) == 0:
-        return render_template('cart_empty.html')
-    total_price = 0
-    cart_dict = {}
-    for row in rows:
-        quantity = row[2]
-        product_id = row[1]
-        cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id} and Stock > {quantity};")
-        product_details = cursor.fetchone()
-        product_name = product_details[0]
-        price = product_details[1]
-        size = product_details[2]
-        product_id = product_details[3]
-        total_price += price * quantity
-        cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_id}
-    
-    cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
-    if cursor.rowcount == 0:
-        order_id = 1
-    else:
-        order_id = cursor.fetchone()[0] + 1
-    
-    cursor.execute("select Delivery_ID from Deliveries order by Delivery_ID desc limit 1;")
-    if cursor.rowcount == 0:
-        delivery_id = 1
-    else:
-        delivery_id = cursor.fetchone()[0] + 1
-
-    current_date = datetime.now().strftime('%Y-%m-%d')
-    cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
-    connection.commit()
-    print(phone_number)
-    cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
-    connection.commit()
-    for product_name, attributes in cart_dict.items():
-        cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
-        connection.commit()
-        cursor.execute(f"select Stock from Product_Inventory where Product_ID = {attributes['product_id']};")
-        stock = cursor.fetchone()[0]
-        if stock < attributes['quantity']:
-            print("Stock not available")
-            return redirect('/cart_page')
+    global product_details
+    global user_details
+    if (request.method == 'POST'):
+        data = request.json
+        payment_status = data['payment_status']
+        address = data['address']
+        phone_number = str(data['phone_number']).strip()
+        cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
+        row = cursor.fetchone()
+        user_name = row[0] + " " + row[1] + " " + row[2]
+        cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
+        rows = cursor.fetchall()
+        if len(rows) == 0:
+            return render_template('cart_empty.html')
+        total_price = 0
+        cart_dict = {}
+        for row in rows:
+            quantity = row[2]
+            product_id = row[1]
+            cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id} and Stock > {quantity};")
+            product_details = cursor.fetchone()
+            product_name = product_details[0]
+            price = product_details[1]
+            size = product_details[2]
+            product_id = product_details[3]
+            total_price += price * quantity
+            cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_id}
         
-        cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
-        connection.commit()
-        cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
-        connection.commit()
+        cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
+        if cursor.rowcount == 0:
+            order_id = 1
+        else:
+            order_id = cursor.fetchone()[0] + 1
+        
+        cursor.execute("select Delivery_ID from Deliveries order by Delivery_ID desc limit 1;")
+        if cursor.rowcount == 0:
+            delivery_id = 1
+        else:
+            delivery_id = cursor.fetchone()[0] + 1
 
-    user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
-    return redirect('/order_confirmation')
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
+        connection.commit()
+        print(phone_number)
+        cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
+        connection.commit()
+        for product_name, attributes in cart_dict.items():
+            cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
+            connection.commit()
+            cursor.execute(f"select Stock from Product_Inventory where Product_ID = {attributes['product_id']};")
+            stock = cursor.fetchone()[0]
+            if stock < attributes['quantity']:
+                print("Stock not available")
+                return redirect('/cart_page')
+            
+            cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
+            connection.commit()
+            cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
+            connection.commit()
 
-@app.route('/order_confirmation', methods=['GET', 'POST'])
+        user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
+        product_details = cart_dict
+        return redirect('/order_confirmation')
+    
+@app.route('/order_confirmation', methods=['GET'])
 def orderconfirmation():
-    return render_template('welcome_page.html') 
+    global user_details
+    global product_details
+    if request.method == 'GET':
+        return render_template('order_confirmation.html', user_details=user_details, product_details= product_details)
 
 @app.route('/upi', methods=['GET', 'POST'])
 def upi_payment():
