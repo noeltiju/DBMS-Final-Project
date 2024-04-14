@@ -122,9 +122,6 @@
             cursor: pointer;
         }
 
-        .payment-methods button:hover {
-            background-color: #02f53b;
-        }
 
         .place-order-button {
             background-color: #007bff;
@@ -172,8 +169,6 @@
                 
                 {% if attributes['status'] == 'Available' %}
                     <button class="remove-from-cart" onclick="removeFromCart('{{ attributes.product_id }}')">Remove from Cart</button>
-                {% else %}
-                    <button class="remove-from-cart" onclick="removeFromCart('{{ attributes.product_id }}')">Out of Stock</button>
                 {% endif %}
             </div>
             {% endfor %}
@@ -184,11 +179,10 @@
                 <p>Total Amount: {{ total_price }}</p>
             </div>
             <div class="payment-methods">
-                <button>Cash on Delivery (COD)</button>
-                <button onclick="location.href='/upi'">UPI</button>
-                <button>Credit/Debit Card</button>
+                <button onclick="set_payment_method('COD')"> Cash on Delivery (COD)</button>
+                <button onclick="set_payment_method('UPI')">UPI</button>
             </div>
-            <button class="place-order-button" onclick="location.href='/placeorder'">Place Order</button>
+            <button onclick = "payment_method()" class="place-order-button" >Place Order</button>
         </div>
     </div>
     <div class="footer">
@@ -196,6 +190,27 @@
     </div>
 
     <script>
+        var selected_payment_method = 'COD';
+        function set_payment_method(payment_method) {
+            selected_payment_method = payment_method;
+        }
+
+        function payment_method(){
+            if(selected_payment_method == 'COD'){
+                fetch('/placeorder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        payment_status: 'PENDING'
+                    })
+                })
+            }
+            else{
+                window.location.href = "/upi";
+            }
+        }
         function removeFromCart(product_id) {
             fetch('/remove_from_cart', {
                 method: 'POST',

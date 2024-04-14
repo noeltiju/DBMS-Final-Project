@@ -33,7 +33,7 @@ triggers_commands(cursor,connection)
 
 @app.route('/')
 def index():
-    return redirect('/managerlogin')
+    return render_template('welcome_page.html')
 
 @app.route('/customersignup', methods=['GET', 'POST'])
 def customer_signup():
@@ -166,19 +166,23 @@ def cart_page():
         return render_template('cart_new.html', cart_dict=cart_dict, total_price=total_price)
     else:
         return render_template('cart_empty.html')
+
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     return render_template('forgot_password.html')
 
 @app.route('/placeorder', methods=['GET', 'POST'])
 def place_order():
+    payment_status = request.json['payment_status']
+    print(payment_status)
     cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
     row = cursor.fetchone()
     user_name = row[0] + " " + row[1] + " " + row[2]
+    print(user_name)
     cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
     rows = cursor.fetchall()
     if len(rows) == 0:
-        return render_template('/cart_page')
+        return render_template('cart_empty.html')
     total_price = 0
     cart_dict = {}
     for row in rows:
@@ -205,10 +209,11 @@ def place_order():
     else:
         delivery_id = cursor.fetchone()[0][0] + 1
     current_date = datetime.now().strftime('%Y-%m-%d')
-    cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, 'Pending');")
+    cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
     connection.commit()
 
-
+    print(order_id)
+    print(delivery_id)
     for product_name, attributes in cart_dict.items():
         cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
         connection.commit()
@@ -223,7 +228,10 @@ def place_order():
         cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
         connection.commit()
 
-    return render_template('order.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = current_date, order_id = order_id)
+    addresses = cursor.execute(f'select Address, Pincode from Addresses where Customer_ID = {user_id};')
+    phone_numbers = cursor.execute(f'select Phone_Number from Phone_Numbers where Customer_ID = {user_id};')
+    print('hello trying to render')
+    return render_template('order_page.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = current_date, order_id = order_id)
 
 @app.route('/upi', methods=['GET', 'POST'])
 def upi_payment():

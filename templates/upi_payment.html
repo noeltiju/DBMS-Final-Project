@@ -58,13 +58,24 @@
 <body>
   <div class="container">
     <img src="../static/assets/upi.png" class="qr-code img-thumbnail img-responsive" />
-
     <div class="options">
-      <button type="button" class="btn button" onclick="location.href='/placeorder'" id="paid">Paid</button>
-      <button type="button" class="btn button" id="cancel">Cancel</button>
+      <button type="button" class="btn button" onclick="paymentStatus('Paid')" id="paid">Paid</button>
+      <button type="button" class="btn button" onclick="location.href = '/cart_page'">Cancel</button>
     </div>
-
   </div>
-</body>
 
+  <script>
+    function paymentStatus(status) {
+      if (status === 'Paid') {
+        fetch('/placeorder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ payment_status: 'Paid' }),
+        });
+      }
+    }
+</script>
+</body>
 </html>
