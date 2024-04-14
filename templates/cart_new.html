@@ -89,7 +89,7 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            text-align: left;
         }
 
         .order-summary {
@@ -122,6 +122,9 @@
             cursor: pointer;
         }
 
+        .place-order-container {
+            width: 100%;
+        }
 
         .place-order-button {
             background-color: #007bff;
@@ -132,6 +135,7 @@
             border-radius: 5px;
             cursor: pointer;
             margin-top: 20px;
+            width: 100%;
         }
 
         .place-order-button:hover {
@@ -151,6 +155,32 @@
             color: #fff;
             text-decoration: none;
         }
+
+        .dropdown-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .dropdown-container label {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .dropdown-container select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .dropdown-container select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
     </style>
 </head>
 
@@ -166,9 +196,10 @@
                 <p>Quantity: {{ attributes['quantity'] }}</p>
                 <p>Price: {{ attributes['price'] }}</p>
                 <p>Size: {{ attributes['size'] }}</p>
-                
+
                 {% if attributes['status'] == 'Available' %}
-                    <button class="remove-from-cart" onclick="removeFromCart('{{ attributes.product_id }}')">Remove from Cart</button>
+                <button class="remove-from-cart" onclick="removeFromCart('{{ attributes.product_id }}')">Remove from
+                    Cart</button>
                 {% endif %}
             </div>
             {% endfor %}
@@ -182,33 +213,65 @@
                 <button onclick="set_payment_method('COD')"> Cash on Delivery (COD)</button>
                 <button onclick="set_payment_method('UPI')">UPI</button>
             </div>
-            <button onclick = "payment_method()" class="place-order-button" >Place Order</button>
+
+            <div class="dropdown-container">
+                <label for="address">Select Address:</label>
+                <select id="address" onchange="storeAddress(this.value)">
+                    {% for address in addresses %}
+                    <option value="{{ address }}">{{ address }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="dropdown-container">
+                <label for="phone">Select Phone Number:</label>
+                <select id="phone" onchange="storePhoneNumber(this.value)">
+                    {% for phone_number in phone_numbers %}
+                    <option value="{{ phone_number }}">{{ phone_number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="place-order-container">
+                <button onclick="payment_method()" class="place-order-button">Place Order</button>
+            </div>
         </div>
     </div>
     <div class="footer">
         <a href="/">Contact us</a>
     </div>
 
+
     <script>
         var selected_payment_method = 'COD';
+        let selected_phone_number = 0;
+        let selected_address = '';
         function set_payment_method(payment_method) {
             selected_payment_method = payment_method;
         }
 
-        function payment_method(){
-            if(selected_payment_method == 'COD'){
-                fetch('/placeorder', {
+        function storePhoneNumber(phone) {
+            selected_phone_number = phone;
+        }
+        function storeAddress(address) {
+            selected_address = address;
+        }
+
+        function payment_method() {
+            if (selected_payment_method === 'COD') {
+                fetch('/place_order', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        payment_status: 'PENDING'
+                        payment_status: 'PENDING',
+                        address: selected_address,
+                        phone_number: selected_phone_number
                     })
-                })
-            }
-            else{
-                window.location.href = "/upi";
+                }).then(response => {
+                    console.log("Order placed successfully.");
+                }).catch(error => {
+                    console.error("Error placing order:", error);
+                });
             }
         }
         function removeFromCart(product_id) {

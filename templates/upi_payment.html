@@ -67,7 +67,7 @@
   <script>
     function paymentStatus(status) {
       if (status === 'Paid') {
-        fetch('/placeorder', {
+        fetch('/place_order', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

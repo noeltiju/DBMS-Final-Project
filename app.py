@@ -163,7 +163,11 @@ def cart_page():
                 size = product_details[2]
                 product_id = product_details[3]
                 cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'status' : 'Not Available', 'product_id': product_id}
-        return render_template('cart_new.html', cart_dict=cart_dict, total_price=total_price)
+        cursor.execute(f'select Address, Pincode from Addresses where Customer_ID = {user_id};')
+        addresses = [row[0] + " " + str(row[1]) for row in cursor.fetchall()]
+        cursor.execute(f'select Phone_Number from Phone_Numbers where Customer_ID = {user_id};')
+        phone_numbers = [row[0] for row in cursor.fetchall()]
+        return render_template('cart_new.html', cart_dict=cart_dict, total_price=total_price, addresses=addresses, phone_numbers=phone_numbers)
     else:
         return render_template('cart_empty.html')
 
@@ -171,14 +175,14 @@ def cart_page():
 def forgot_password():
     return render_template('forgot_password.html')
 
-@app.route('/placeorder', methods=['GET', 'POST'])
+@app.route('/place_order', methods=['POST'])
 def place_order():
     payment_status = request.json['payment_status']
-    print(payment_status)
+    address = request.json['address']
+    phone_number = str(request.json['phone_number']).strip()
     cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
     row = cursor.fetchone()
     user_name = row[0] + " " + row[1] + " " + row[2]
-    print(user_name)
     cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
     rows = cursor.fetchall()
     if len(rows) == 0:
@@ -207,13 +211,14 @@ def place_order():
     if cursor.rowcount == 0:
         delivery_id = 1
     else:
-        delivery_id = cursor.fetchone()[0][0] + 1
+        delivery_id = cursor.fetchone()[0] + 1
+
     current_date = datetime.now().strftime('%Y-%m-%d')
     cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
     connection.commit()
-
-    print(order_id)
-    print(delivery_id)
+    print(phone_number)
+    cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
+    connection.commit()
     for product_name, attributes in cart_dict.items():
         cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
         connection.commit()
@@ -228,10 +233,12 @@ def place_order():
         cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
         connection.commit()
 
-    addresses = cursor.execute(f'select Address, Pincode from Addresses where Customer_ID = {user_id};')
-    phone_numbers = cursor.execute(f'select Phone_Number from Phone_Numbers where Customer_ID = {user_id};')
-    print('hello trying to render')
-    return render_template('order_page.html',product_dict=cart_dict, total_price=total_price, user_name = user_name, date = current_date, order_id = order_id)
+    user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
+    return redirect('/order_confirmation')
+
+@app.route('/order_confirmation', methods=['GET', 'POST'])
+def orderconfirmation():
+    return render_template('welcome_page.html') 
 
 @app.route('/upi', methods=['GET', 'POST'])
 def upi_payment():

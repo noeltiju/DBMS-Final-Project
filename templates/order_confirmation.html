@@ -71,20 +71,21 @@
     </div>
     <div class="receipt">
         <h2>Thank You! Your order has been placed.</h2>
-        <p>Customer Name: {{ user_name }}</p>
-        <p>Order ID: {{ order_id }}</p>
-        <p>Date: {{ date }}</p>
-        <p>Total Amount: {{ total_price }}</p>
+        <!-- <p>Customer Name: {{ user_details['username']}}</p>
+        <p>Order ID: {{ user_details['order_id']}}</p>
+        <p>Delivery ID: {{ user_details['delivery_id']}}</p>
+        <p>Date: {{ user_details['date']}}</p>
+        <p>Total Amount: {{ user_details['total_price']}}</p>
         <hr>
         <h3>Order Details:</h3>
-        {% for product_name, attributes in product_dict.items() %}
+        {% for product_name, attributes in product_details.items() %}
         <div class="item">
             <p><strong>{{ product_name }}</strong></p>
             <p>Quantity: {{ attributes['quantity'] }}</p>
             <p>Price: {{ attributes['price'] }}</p>
             <p>Size: {{ attributes['size'] }}</p>
         </div>
-        {% endfor %}
+        {% endfor %} -->
     </div>
 </body>
 
