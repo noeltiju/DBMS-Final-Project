@@ -334,7 +334,24 @@ def removing_item():
 
 @app.route('/manager_page', methods=['GET', 'POST'])
 def manager_main_page():
-    cursor.execute("Select * from manager_alert;")
+    success_message = None
+
+    if request.method == 'POST':
+        alert_id = request.form['alertId']
+        quantity = request.form['quantity']
+        cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s and approval='NO'", (alert_id,))
+        product_id = cursor.fetchone()
+        if product_id:
+            product_id = product_id[0]
+            cursor.execute("INSERT INTO manager_orders (product_id, quantity, alert_id) VALUES (%s, %s, %s)", (product_id, quantity, alert_id))
+            connection.commit()
+            cursor.execute("UPDATE manager_alert SET approval = 'YES' WHERE alert_id = %s", (alert_id,))
+            connection.commit()
+            success_message = "Order placed successfully!"
+        else:
+            success_message = "Invalid Alert ID. Please enter a valid ID."
+
+    cursor.execute("SELECT * FROM manager_alert WHERE approval = 'No';")
     alert_temp = cursor.fetchall()
     alert_data = []
     for alert in alert_temp:
@@ -344,22 +361,10 @@ def manager_main_page():
         alert_col['quantity'] = alert[2]
         alert_data.append(alert_col)
 
-    empty_message = None
-    if not alert_data:
-        empty_message = "There are currently no alerts in the database."
+    empty_message = "There are currently no alerts in the database." if not alert_data else None
 
-    if request.method == 'POST':
-        alert_id = request.form['alertId']
-        quantity = request.form['quantity']
-        cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s", (alert_id,))
-        product_id = cursor.fetchone()
-        if product_id:
-            product_id = product_id[0]
-            cursor.execute("INSERT INTO manager_orders (product_id, quantity, alert_id) VALUES (%s, %s, %s)", (product_id, quantity, alert_id))
-            success_message = "Order placed successfully!"
-        else:
-            error_message = "Invalid Alert ID. Please enter a valid ID."
+    return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
 
-    return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message)
+
 if __name__ == '__main__':
     app.run(debug=True)

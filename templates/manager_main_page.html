@@ -114,19 +114,31 @@
         }
     </style>
 
-    <script>
-        function validateForm() {
-            var alertId = document.getElementById("alertId").value.trim();
-            var quantity = document.getElementById("quantity").value.trim();
+<script>
+    // Define a function to handle form validation and success message display
+    function validateForm() {
+        var alertId = document.getElementById("alertId").value.trim();
+        var quantity = document.getElementById("quantity").value.trim();
 
-            if (alertId === "" || quantity === "") {
-                alert("Please fill in both Alert ID and Quantity fields.");
-                return false;
-            }
-
-            return true;
+        // Perform form validation
+        if (alertId === "" || quantity === "") {
+            alert("Please fill in both Alert ID and Quantity fields.");
+            return false;
         }
-    </script>
+
+        // Return true to submit the form
+        return true;
+    }
+
+    // Display the success message if it exists
+    window.onload = function() {
+        var successMessage = "{{ success_message }}"; // Get the success message from Flask
+        if (successMessage && successMessage !== "None") {
+            alert(successMessage); // Display the success message
+        }
+    };
+</script>
+
 </head>
 
 <body>
@@ -167,6 +179,7 @@
                 <button type="submit" class="place-order-btn">Place Order</button>
             </div>
         </form>
+        
     </div>
 
     <div class="footer">
