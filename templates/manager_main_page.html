@@ -144,34 +144,29 @@
                 <th>Alert ID</th>
                 <th>Product ID</th>
                 <th>Quantity</th>
-                <th>Size</th>
             </tr>
-            <!-- mehul table rows come here, dynamic from ur db , wtv for loop u apply -->
+            {% if alert_data %}
+            {% for alert in alert_data %}
             <tr>
-                <td>1</td>
-                <td>101</td>
-                <td>25</td>
-                <td>M</td>
+                <td>{{ alert.alert_id }}</td>  
+                <td>{{ alert.product_id }}</td>
+                <td>{{ alert.quantity }}</td>
             </tr>
+            {% endfor %}
+            {% else %}
             <tr>
-                <td>2</td>
-                <td>102</td>
-                <td>10</td>
-                <td>L</td>
+                <td colspan="4">{{ empty_message }}</td>
             </tr>
-            <tr>
-                <td>3</td>
-                <td>103</td>
-                <td>15</td>
-                <td>XL</td>
-            </tr>
+            {% endif %}
         </table>
 
-        <div class="input-container">
-            <input type="text" placeholder="Alert ID" />
-            <input type="number" placeholder="Quantity" />
-            <button class="place-order-btn" onclick="return validateForm()">Place Order</button>
-        </div>
+        <form action="/manager_page" method="post" onsubmit="return validateForm()">
+            <div class="input-container">
+                <input type="text" placeholder="Alert ID" name="alertId" id="alertId" />
+                <input type="number" placeholder="Quantity" name="quantity" id="quantity" />
+                <button type="submit" class="place-order-btn">Place Order</button>
+            </div>
+        </form>
     </div>
 
     <div class="footer">

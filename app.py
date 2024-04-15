@@ -6,19 +6,22 @@ from datetime import datetime
 app = Flask(__name__)
 
 db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db.init_app(app)
 
-connection = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='hike'
-)
+# connection = pymysql.connect(
+#     host='localhost',
+#     user='root',
+#     password='hike'
+# )
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
@@ -26,6 +29,13 @@ connection = pymysql.connect(
 #     user='udayk',
 #     password='hike'
 # ) 
+
+connection = pymysql.connect(
+    host='192.168.239.58',
+    port=3306,
+    user='kingmehul',
+    password='hike'
+) 
 
 cursor = connection.cursor()
 cursor.execute("USE hike;")
@@ -324,6 +334,32 @@ def removing_item():
 
 @app.route('/manager_page', methods=['GET', 'POST'])
 def manager_main_page():
-    return render_template('manager_main_page.html')
+    cursor.execute("Select * from manager_alert;")
+    alert_temp = cursor.fetchall()
+    alert_data = []
+    for alert in alert_temp:
+        alert_col = {}
+        alert_col['alert_id'] = alert[0]
+        alert_col['product_id'] = alert[1]
+        alert_col['quantity'] = alert[2]
+        alert_data.append(alert_col)
+
+    empty_message = None
+    if not alert_data:
+        empty_message = "There are currently no alerts in the database."
+
+    if request.method == 'POST':
+        alert_id = request.form['alertId']
+        quantity = request.form['quantity']
+        cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s", (alert_id,))
+        product_id = cursor.fetchone()
+        if product_id:
+            product_id = product_id[0]
+            cursor.execute("INSERT INTO manager_orders (product_id, quantity, alert_id) VALUES (%s, %s, %s)", (product_id, quantity, alert_id))
+            success_message = "Order placed successfully!"
+        else:
+            error_message = "Invalid Alert ID. Please enter a valid ID."
+
+    return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message)
 if __name__ == '__main__':
     app.run(debug=True)
