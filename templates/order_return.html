@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Orders - Hike Retail Store</title>
+    <style>
+        body {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            margin: 0;
+            padding: 0;
+            background-color: #45474B;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #45474B;
+            color: #fff;
+        }
+
+        .logo {
+            font-size: 56px;
+            color: #fff;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+            flex-grow: 1;
+        }
+
+        .orders-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        .order-list {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .order {
+            display: flex;
+            flex-direction: column;
+            padding: 18px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .order h3 {
+            font-size: 18px;
+            color: #333;
+            margin: 0;
+            overflow-wrap: break-word;
+        }
+
+        .product-details {
+            margin-bottom: 10px;
+        }
+
+        .return-button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .return-button:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+            background-color: #45474B;
+            color: #fff;
+            text-align: left;
+            padding: 20px 50px;
+            width: 100%;
+        }
+
+        .footer a {
+            font-size: 20px;
+            color: #fff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <a href="/main_page" class="logo">HIKE</a>
+    </div>
+    <div class="container">
+        <div class="orders-title">Your Orders</div>
+        <div class="order-list">
+            {% for order in orders %}
+            <div class="order">
+                <h3>Order {{ loop.index }} (ID: {{ order.id }})</h3>
+                {% for product in order.products %}
+                <div class="product-details">
+                    <p>Product Name: {{ product.name }}</p>
+                    <p>Quantity: {{ product.quantity }}</p>
+                    <p>Size: {{ product.size }}</p>
+                    <p>Price: ${{ product.price }}</p>
+                </div>
+                {% endfor %}
+                <button class="return-button">Return</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+</html>
