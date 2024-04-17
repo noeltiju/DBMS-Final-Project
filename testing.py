@@ -15,7 +15,7 @@ cursor.execute('show databases;')
 cursor.execute('use hike;')
 user_id = 1
 product_id = 1
-cursor.execute("select Image, Category_Name from Category where Gender = 'Male';")
+cursor.execute("select * from Orders;")
 
 for i in  cursor:
     print(i)

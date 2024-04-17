@@ -6,29 +6,29 @@ from datetime import datetime
 app = Flask(__name__)
 
 db = SQLAlchemy()
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# connection = pymysql.connect(
-#     host='localhost',
-#     user='root',
-#     password='hike'
-# )
-
 connection = pymysql.connect(
-    host='192.168.239.58',
-    port=3306,
-    user='udayk',
+    host='localhost',
+    user='root',
     password='hike'
-) 
+)
+
+# connection = pymysql.connect(
+#     host='192.168.239.58',
+#     port=3306,
+#     user='udayk',
+#     password='hike'
+# ) 
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
@@ -46,6 +46,8 @@ def index():
     return render_template('welcome_page.html')
 
 @app.route('/customersignup', methods=['GET', 'POST'])
+
+#Transaction 1: Customer Signup
 def customer_signup():
     if request.method == 'POST':
         customer_first_name = request.form['name']; customer_second_name  = ""; customer_third_name = "";
@@ -80,6 +82,9 @@ user_id = 0
 
 global user_details
 global product_details
+
+global user_address
+global user_phone_number
 @app.route('/customerlogin', methods=['GET', 'POST'])
 def customer_signin():
     global signin_attempts
@@ -188,6 +193,7 @@ def cart_page():
 def forgot_password():
     return render_template('forgot_password.html')
 
+#Transaction 2: Placing Order
 @app.route('/place_order', methods=['POST'])
 def place_order():
     global product_details
@@ -230,40 +236,48 @@ def place_order():
         else:
             delivery_id = cursor.fetchone()[0] + 1
 
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
-        connection.commit()
-        print(phone_number)
-        cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
-        connection.commit()
-        for product_name, attributes in cart_dict.items():
-            cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
+        try:
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
             connection.commit()
-            cursor.execute(f"select Stock from Product_Inventory where Product_ID = {attributes['product_id']};")
-            stock = cursor.fetchone()[0]
-            if stock < attributes['quantity']:
-                print("Stock not available")
-                return redirect('/cart_page')
-            
-            cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
+            print(phone_number)
+            cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
             connection.commit()
-            cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
-            connection.commit()
+            for product_name, attributes in cart_dict.items():
+                cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
+                connection.commit()
+                cursor.execute(f"select Stock from Product_Inventory where Product_ID = {attributes['product_id']};")
+                stock = cursor.fetchone()[0]
+                if stock < attributes['quantity']:
+                    print("Stock not available")
+                    return redirect('/cart_page')
+                
+                cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
+                connection.commit()
+                cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
+                connection.commit()
 
-        user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
-        product_details = cart_dict
-        return redirect('/order_confirmation')
+            user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
+            product_details = cart_dict
+            return redirect('/order_confirmation')
+        except:
+            connection.rollback()
+            return redirect('/cart_page', status = 'FAIL')
     
 @app.route('/order_confirmation', methods=['GET'])
 def orderconfirmation():
     global user_details
+    print(user_details)
     global product_details
     if request.method == 'GET':
         return render_template('order_confirmation.html', user_details=user_details, product_details= product_details)
 
 @app.route('/upi', methods=['GET', 'POST'])
 def upi_payment():
-    return render_template('upi_payment.html')
+    data = request.json
+    address = data['address']
+    phone_number = data['phone_number']
+    return render_template('upi_payment.html', address=address, phone_number=phone_number)
 
 @app.route('/category', methods=['GET', 'POST'])
 def category_page():
@@ -297,6 +311,7 @@ def product_details():
 
     return redirect('/')
 
+#Transaction 3: Adding to Cart
 @app.route('/addtocart', methods=['GET','POST'])
 def add_to_cart():
     data = request.json
@@ -319,10 +334,12 @@ def add_to_cart():
                 connection.commit()
         except:
             connection.rollback()
+            return render_template('successful_login.html', message = 'Item could not be added!')
     else:
         return render_template('successful_login.html', message = 'Stock not available!')
     return redirect('/cart_page')
 
+#Transaction 4: Removing from Cart
 @app.route('/remove_from_cart', methods=['GET','POST'])
 def removing_item():
     data = request.json
@@ -331,9 +348,8 @@ def removing_item():
         cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
         connection.commit()
     except:
-        print("Error in query")
-        print(product_id)
-    
+        connection.rollback()
+        return render_template('successful_login.html', message = 'Item could not be removed!')
     return redirect('/cart_page')
 
 @app.route('/manager_page', methods=['GET', 'POST'])

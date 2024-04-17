@@ -269,6 +269,18 @@
                         phone_number: selected_phone_number
                     })
                 })
+            }else if (selected_payment_method === 'UPI') {
+                fetch('/place_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        payment_status: 'PAID',
+                        address: selected_address,
+                        phone_number: selected_phone_number
+                    })
+                })
             }
         }
         function removeFromCart(product_id) {
@@ -282,6 +294,13 @@
                 })
             })
 
+        }
+
+        window.onload = function () {
+            var status = '{{ status }}';
+            if (status & status === 'FAIL') {
+                alert('Order could not be placed!');
+            }
         }
     </script>
 </body>

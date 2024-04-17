@@ -60,6 +60,7 @@
     <img src="../static/assets/upi.png" class="qr-code img-thumbnail img-responsive" />
     <div class="options">
       <button type="button" class="btn button" onclick="paymentStatus('Paid')" id="paid">Paid</button>
+      <button type="button" class="btn button" onclick="location.href = '/order_confirmation'" id="paid">Check Order Status</button>
       <button type="button" class="btn button" onclick="location.href = '/cart_page'">Cancel</button>
     </div>
   </div>
@@ -72,7 +73,11 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ payment_status: 'Paid' }),
+          body: JSON.stringify({
+                payment_status: 'PAID',
+                address: address,
+                phone_number: phone_number
+            })
         });
       }
     }
