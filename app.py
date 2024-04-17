@@ -6,29 +6,29 @@ from datetime import datetime
 app = Flask(__name__)
 
 db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-connection = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='hike'
-)
-
 # connection = pymysql.connect(
-#     host='192.168.239.58',
-#     port=3306,
-#     user='udayk',
+#     host='localhost',
+#     user='root',
 #     password='hike'
-# ) 
+# )
+
+connection = pymysql.connect(
+    host='192.168.239.58',
+    port=3306,
+    user='udayk',
+    password='hike'
+) 
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
