@@ -158,12 +158,12 @@ def cart_page():
     cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
     rows = cursor.fetchall()
     total_price = 0
-    cart_dict = {}
+    cart_items = []
     if rows:
         for row in rows:
             quantity = row[2]
             product_id = row[1]
-            cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id};")
+            cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id} and Stock > {quantity};")
             product_details = cursor.fetchone()
             if product_details:
                 product_name = product_details[0]
@@ -172,20 +172,13 @@ def cart_page():
                 product_id = product_details[3]
                 total_price += price * quantity
 
-                cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'status' : 'Available', 'product_id': product_id}
-            else:
-                cursor.execute(f"select Product_Name, Price, Size from Product_Inventory where Product_ID = {product_id};")
-                product_details = cursor.fetchone()
-                product_name = product_details[0]
-                price = product_details[1]
-                size = product_details[2]
-                product_id = product_details[3]
-                cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'status' : 'Not Available', 'product_id': product_id}
+                cart_items.append({'name': product_name, 'quantity': quantity, 'price': price, 'size': size, 'status' : 'Available', 'product_id': product_id}) 
+
         cursor.execute(f'select Address, Pincode from Addresses where Customer_ID = {user_id};')
         addresses = [row[0] + " " + str(row[1]) for row in cursor.fetchall()]
         cursor.execute(f'select Phone_Number from Phone_Numbers where Customer_ID = {user_id};')
         phone_numbers = [row[0] for row in cursor.fetchall()]
-        return render_template('cart_new.html', cart_dict=cart_dict, total_price=total_price, addresses=addresses, phone_numbers=phone_numbers)
+        return render_template('cart_new.html', cart_items=cart_items, total_price=total_price, addresses=addresses, phone_numbers=phone_numbers)
     else:
         return render_template('cart_empty.html')
 
@@ -270,7 +263,7 @@ def orderconfirmation():
     print(user_details)
     global product_details
     if request.method == 'GET':
-        return render_template('order_confirmation.html', user_details=user_details, product_details= product_details)
+        return render_template('order_confirmation.html', user_details=user_details, product_attributes= product_details)
 
 @app.route('/upi', methods=['GET', 'POST'])
 def upi_payment():

@@ -190,17 +190,16 @@
     </div>
     <div class="container">
         <div class="cart-items">
-            {% for product_name, attributes in cart_dict.items() %}
+            {% for product_attributes in cart_items %}
             <div class="item">
-                <h3>{{ product_name }}</h3>
-                <p>Quantity: {{ attributes['quantity'] }}</p>
-                <p>Price: {{ attributes['price'] }}</p>
-                <p>Size: {{ attributes['size'] }}</p>
+                <h3>{{ product_attributes['name'] }}</h3>
+                <p>Quantity: {{ product_attributes['quantity'] }}</p>
+                <p>Price: Rs. {{ product_attributes['price'] }}</p>
+                <p>Size: {{ product_attributes['size'] }}</p>
 
-                {% if attributes['status'] == 'Available' %}
-                <button class="remove-from-cart" onclick="removeFromCart('{{ attributes.product_id }}')">Remove from
+                <button class="remove-from-cart" onclick="removeFromCart('{{ product_attributes.product_id }}')">Remove from
                     Cart</button>
-                {% endif %}
+
             </div>
             {% endfor %}
         </div>

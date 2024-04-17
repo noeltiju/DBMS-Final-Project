@@ -79,12 +79,12 @@
         <p>Total Amount: {{ user_details['total_price']}}</p>
         <hr>
         <h3>Order Details:</h3>
-        {% for product_name, attributes in product_details.items() %}
+        {% for product_attributes in product_details %}
         <div class="item">
-            <p><strong>{{ product_name }}</strong></p>
-            <p>Quantity: {{ attributes['quantity'] }}</p>
-            <p>Price: {{ attributes['price'] }}</p>
-            <p>Size: {{ attributes['size'] }}</p>
+            <p><strong>{{  product_attributes['name'] }}</strong></p>
+            <p>Quantity: {{  product_attributes['quantity'] }}</p>
+            <p>Price: {{  product_attributes['price'] }}</p>
+            <p>Size: {{  product_attributes['size'] }}</p>
         </div>
         {% endfor %}
     </div>
