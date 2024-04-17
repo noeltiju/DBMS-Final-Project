@@ -104,7 +104,12 @@
             color: #fff;
             text-decoration: none;
         }
-        
+        .empty-cart-message {
+    color: #fff;
+    text-align: center;
+    font-size: 24px; 
+    margin-top: 100px; 
+}
     </style>
 </head>
 
@@ -114,22 +119,8 @@
     </div>
     <div class="container">
         <div class="orders-title">Order ID: {{ order_id }}</div>
-        <div class="order-list">
-            <div class="order">
-                {% for product_id, attributes in order_items_dict.items() %}
-                <div class="product-details">
-                    <p>Product Name: {{ attributes['name'] }}</p>
-                    <p>Quantity: {{ attributes['quantity'] }}</p>
-                    <p>Price: {{ attributes['price'] }}</p>
-                </div>
-                <form action="/return_item" method="POST">
-                    <input type="hidden" name="order_id" value="{{ order_id }}">
-                    <input type="hidden" name="product_id" value="{{ product_id }}">
-                    <button class="return-button">Return</button>
-                </form>
-                {% endfor %}
-                
-            </div>
+        <div class="cart-items">
+            <div class="empty-cart-message">Nothing to be displayed!</div>
         </div>
     </div>
 </body>

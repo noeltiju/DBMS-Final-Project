@@ -2,33 +2,33 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 from triggers import triggers_commands
-from datetime import datetime
+from datetime import datetime, timedelta
 app = Flask(__name__)
 
 db = SQLAlchemy()
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# connection = pymysql.connect(
-#     host='localhost',
-#     user='root',
-#     password='hike'
-# )
-
 connection = pymysql.connect(
-    host='192.168.239.58',
-    port=3306,
-    user='udayk',
+    host='localhost',
+    user='root',
     password='hike'
-) 
+)
+
+# connection = pymysql.connect(
+#     host='192.168.239.58',
+#     port=3306,
+#     user='udayk',
+#     password='hike'
+# ) 
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
@@ -441,6 +441,49 @@ def manager_main_page():
 
     return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
 
+@app.route('/customer_orders', methods = ['GET', 'POST'])
+def customer_orders():
+    cursor.execute(f"select * from Orders where Customer_ID = {user_id};")
+    orders = cursor.fetchall()
+    order_dict = {}
+    for order in orders:
+        order_dict[order[0]] = {'date': order[1], 'total_price': order[4], 'payment_status': order[5]}
+    return render_template('customer_orders.html', order_dict=order_dict)
 
+@app.route('/view_order', methods = ['GET', 'POST'])
+def view_customer_order():
+    data = request.form['order_id']
+    cursor.execute(f"SELECT Order_Date FROM Orders WHERE Order_ID = {data};")
+    date = cursor.fetchone()[0]
+    date = datetime.strptime(date, '%Y-%m-%d').date()
+    today = datetime.now().date()
+    seven_days_ago = today - timedelta(days=7)
+    if date < seven_days_ago:
+        redirect('/customer_orders')
+    cursor.execute(f"select * from Order_Items where Order_ID = {data};")
+    order_items_dict = {}
+    result1 = cursor.fetchall()
+    for row in result1:
+        cursor.execute(f"select Product_Name, Price from Product_Inventory where Product_ID = {row[1]};")
+        result2 = cursor.fetchone()
+        product_name = result2[0]; price = result2[1]
+        order_items_dict[row[1]] = {'quantity': row[2], "name": product_name ,'price': price}
+
+    if order_items_dict == {}:
+        return render_template('empty_order.html', order_id = data)
+    
+    return render_template('order_return.html', order_items_dict=order_items_dict, order_id = data)
+
+@app.route('/return_item', methods = ['GET', 'POST'])
+def return_item():
+    order_id = request.form['order_id']
+    product_id = request.form['product_id']
+
+    cursor.execute(f"delete from Order_Items where Order_ID = {order_id} and Product_ID = {product_id};")
+    cursor.execute(f"select Delivery_ID from Orders where Order_ID = {order_id};")
+    delivery_id = cursor.fetchone()[0]
+    cursor.execute(f"insert into Returns values({order_id}, {product_id}, {delivery_id}, {user_id});")
+    connection.commit()
+    return render_template('return_confirmed.html')
 if __name__ == '__main__':
     app.run(debug=True)

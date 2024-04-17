@@ -112,10 +112,14 @@
     <div class="container">
         <div class="orders-title">Your Orders</div>
         <div class="order-list">
-            {% for order in orders %}
+            {% for order_id, attributes in order_dict.items() %}
             <div class="order">
-                <h3>Order {{ loop.index }}</h3>
-                <button class="view-button">View</button>
+                <h3>Order ID:{{ order_id }}</h3>
+                <p>Date: {{ attributes['date'] }}</p>
+                <form action="/view_order" method="POST">
+                    <input type="hidden" name="order_id" value="{{ order_id }}">
+                    <button class="view-button" type="submit">View</button>
+                </form>
             </div>
             {% endfor %}
         </div>

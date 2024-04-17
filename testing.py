@@ -15,7 +15,7 @@ cursor.execute('show databases;')
 cursor.execute('use hike;')
 user_id = 1
 product_id = 1
-cursor.execute("select * from Cart_Items;")
+cursor.execute("select * from Returns;")
 
 for i in  cursor:
     print(i)

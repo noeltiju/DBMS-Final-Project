@@ -302,7 +302,7 @@
 
         window.onload = function () {
             var status = '{{ status }}';
-            if (status & status === 'FAIL') {
+            if (status & status == 'FAIL') {
                 alert('Order could not be placed!');
             }
         }
