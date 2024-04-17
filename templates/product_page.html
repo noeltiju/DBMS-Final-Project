@@ -34,9 +34,11 @@
             cursor: pointer;
         }
 
-        .login-options {
-            display: flex;
-            align-items: center;
+        .login-options a {
+            margin-right: 20px;
+            font-size: 18px;
+            color: #fff;
+            text-decoration: none;
         }
 
         .container {
@@ -118,11 +120,11 @@
 
 <body>
     <div class="header">
-        <a href= '/main_page' class="logo">HIKE</a>
+        <a href='/main_page' class="logo">HIKE</a>
         <div class="login-options">
             <a href="/cart_page">Cart</a>
             <a href="/">Sign Out</a>
-            
+
         </div>
     </div>
     <div class="container">
@@ -138,9 +140,7 @@
         </div>
         {% endfor %}
     </div>
-    <div class="footer">
-        <a href="/">Contact us</a>
-    </div>
+
 </body>
 
 </html>

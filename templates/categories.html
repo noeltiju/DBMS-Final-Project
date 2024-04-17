@@ -7,10 +7,8 @@
     <title>Hike</title>
     <style>
         body {
-            width: 100%;
             font-family: Georgia, 'Times New Roman', Times, serif;
-            top: 0;
-            left: 0;
+            margin: 0;
             padding: 0;
             background-color: #45474B;
         }
@@ -36,9 +34,11 @@
             cursor: pointer;
         }
 
-        .login-options {
-            display: flex;
-            align-items: center;
+        .login-options a {
+            margin-right: 20px;
+            font-size: 18px;
+            color: #fff;
+            text-decoration: none;
         }
 
         .container {
@@ -126,7 +126,7 @@
         <div class="login-options">
             <a href="/cart_page">Cart</a>
             <a href="/">Sign Out</a>
-            
+
         </div>
     </div>
     <div class="container">
@@ -142,9 +142,7 @@
         </div>
         {% endfor %}
     </div>
-    <div class="footer">
-        <a href="/">Contact us</a>
-    </div>
+
 </body>
 
 </html>
