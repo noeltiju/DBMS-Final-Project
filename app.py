@@ -159,6 +159,14 @@ def cart_page():
     rows = cursor.fetchall()
     total_price = 0
     cart_items = []
+    
+    cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
+    result = cursor.fetchone()
+    if result[2] != 0:
+        return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
+    
+    cursor.execute(f"update table Concurrency_Manager set Read_user = 1;")
+    connection.commit()
     if rows:
         for row in rows:
             quantity = row[2]
@@ -178,6 +186,9 @@ def cart_page():
         addresses = [row[0] + " " + str(row[1]) for row in cursor.fetchall()]
         cursor.execute(f'select Phone_Number from Phone_Numbers where Customer_ID = {user_id};')
         phone_numbers = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(f"update table Concurrency_Manager set Read_user = 0;")
+        connection.commit()
         return render_template('cart_new.html', cart_items=cart_items, total_price=total_price, addresses=addresses, phone_numbers=phone_numbers)
     else:
         return render_template('cart_empty.html')
@@ -186,12 +197,20 @@ def cart_page():
 def forgot_password():
     return render_template('forgot_password.html')
 
-#Transaction 2: Placing Order
+#Transaction 2: Placing Order Conflicting
 @app.route('/place_order', methods=['POST'])
 def place_order():
     global product_details
     global user_details
     if (request.method == 'POST'):
+
+        cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
+        result = cursor.fetchone()
+        if not (result[1] == 0 and result[2] == 0):
+            return redirect('/cart_page')
+        
+        cursor.execute(f"update Concurrency_Manager set Write_user = 1;")
+        connection.commit()
         data = request.json
         payment_status = data['payment_status']
         address = data['address']
@@ -252,6 +271,9 @@ def place_order():
 
             user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
             product_details = cart_dict
+
+            cursor.execute(f"update Concurreny_Manager set Write_user = 0;")
+            connection.commit()
             return redirect('/order_confirmation')
         except:
             connection.rollback()
@@ -275,6 +297,13 @@ def upi_payment():
 @app.route('/category', methods=['GET', 'POST'])
 def category_page():
     if (request.method == 'POST'):
+        cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
+        result = cursor.fetchone()
+        if result[2] != 0:
+            return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
+    
+        cursor.execute(f"update table Concurrency_Manager set Read_user = 1;")
+        connection.commit()
         category = request.form['category']
         dept  = request.form['department']
         cursor.execute(f"select Product_Inventory.Product_Name, Price, Description, Image from Product_Inventory , Product_Description where Category = '{category}' and Gender = '{dept}' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
@@ -283,12 +312,23 @@ def category_page():
 
         for row in rows:
             product_dict[row[0]] = {'description': row[2], 'price': row[1], 'image': row[3]}
+
+        cursor.execute(f"update table Concurrency_Manager set Read_user = 0;")
+        connection.commit()
         return render_template('product_page.html', product_dict=product_dict, category=category, department = dept)
     return render_template('/')
 
 @app.route('/product_details', methods = ['POST'])
 def product_details():
     if request.method == 'POST':
+        cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
+        result = cursor.fetchone()
+        if result[2] != 0:
+            return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
+    
+        cursor.execute(f"update table Concurrency_Manager set Read_user = 1;")
+        connection.commit()
+
         product_name = request.form['product_name']
         cursor.execute(f"select Price from Product_Inventory where Product_Name = '{product_name}';")
         product_price = cursor.fetchone()[0]
@@ -300,6 +340,9 @@ def product_details():
         result = cursor.fetchone()
         product_description = result[0]
         image_address = result[1]
+
+        cursor.execute(f"update table Concurrency_Manager set Read_user = 0;")
+        connection.commit()
         return render_template('product_details_page.html', product_name = product_name, product_price = product_price, sizes = product_sizes, product_description = product_description, image_address = image_address)
 
     return redirect('/')
@@ -312,6 +355,14 @@ def add_to_cart():
     product_name = data['name']
     size = data['size']
     quantity = data['quantity']
+    cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
+    result = cursor.fetchone()
+    if result[2] != 0:
+        return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
+    
+    cursor.execute(f"update table Concurrency_Manager set Read_user = 1;")
+    connection.commit()
+
     cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product_name}' and Size = '{size}' and Stock > {quantity};")
     if (cursor.rowcount == 1):
         product_id = cursor.fetchone()[0]
@@ -325,6 +376,9 @@ def add_to_cart():
             else:
                 cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
                 connection.commit()
+
+            cursor.execute(f"update table Concurrency_Manager set Read_user = 0;")
+            connection.commit()
         except:
             connection.rollback()
             return render_template('successful_login.html', message = 'Item could not be added!')
