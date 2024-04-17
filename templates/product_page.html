@@ -128,7 +128,7 @@
     <div class="container">
         {% for product_name, attributes in product_dict.items() %}
         <div class="item">
-            <img src="../static/assets/tshirt1.png" alt="{{ product_name }}">
+            <img src="{{ attributes.image }}" alt="{{ product_name }}">
             <h3>{{ product_name }}</h3>
             <p>${{ attributes.price }}</p>
             <form action="/product_details" method="POST">

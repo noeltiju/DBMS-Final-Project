@@ -115,7 +115,6 @@
     </style>
 
 <script>
-    // Define a function to handle form validation and success message display
     function validateForm() {
         var alertId = document.getElementById("alertId").value.trim();
         var quantity = document.getElementById("quantity").value.trim();
@@ -126,15 +125,13 @@
             return false;
         }
 
-        // Return true to submit the form
         return true;
     }
 
-    // Display the success message if it exists
     window.onload = function() {
-        var successMessage = "{{ success_message }}"; // Get the success message from Flask
+        var successMessage = "{{ success_message }}"; 
         if (successMessage && successMessage !== "None") {
-            alert(successMessage); // Display the success message
+            alert(successMessage);
         }
     };
 </script>

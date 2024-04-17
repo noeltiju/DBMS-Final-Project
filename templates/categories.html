@@ -130,9 +130,9 @@
         </div>
     </div>
     <div class="container">
-        {% for category_name in categories %}
+        {% for category_name, attributes in categories.items() %}
         <div class="item">
-            <img src="../static/assets/tshirt1.png" alt="{{ category_name }}">
+            <img src="{{ attributes.image }}" alt="{{ category_name }}">
             <h3>{{ category_name }}</h3>
             <form action="/category" method="POST">
                 <input type="hidden" name="category" value="{{ category_name }}">

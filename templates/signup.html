@@ -86,6 +86,7 @@
     </div>
     <div class="container">
         <h2>Customer Sign Up</h2>
+
         <form action="/customersignup" method="post">
             <input type="text" name="name" placeholder="Name" required><br>
             <input type="number" name="age" placeholder="Age" required><br>
@@ -98,6 +99,17 @@
             <input type="submit" value="Sign Up">
         </form>
     </div>
+    <script>
+        function signup_fail() {
+            alert('Sign up failed. Please try again.');
+        }
+        window.onload = function() {
+        var successMessage = "{{ status }}"; 
+        if (successMessage == 'FAIL') {
+            alert("Signing up failed! Please try again.");
+        }
+    };
+    </script>
 </body>
 
 </html>

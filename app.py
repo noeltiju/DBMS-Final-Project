@@ -6,22 +6,22 @@ from datetime import datetime
 app = Flask(__name__)
 
 db = SQLAlchemy()
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# connection = pymysql.connect(
-#     host='localhost',
-#     user='root',
-#     password='hike'
-# )
+connection = pymysql.connect(
+    host='localhost',
+    user='root',
+    password='hike'
+)
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
@@ -30,12 +30,12 @@ db.init_app(app)
 #     password='hike'
 # ) 
 
-connection = pymysql.connect(
-    host='192.168.239.58',
-    port=3306,
-    user='kingmehul',
-    password='hike'
-) 
+# connection = pymysql.connect(
+#     host='192.168.239.58',
+#     port=3306,
+#     user='kingmehul',
+#     password='hike'
+# ) 
 
 cursor = connection.cursor()
 cursor.execute("USE hike;")
@@ -59,7 +59,6 @@ def customer_signup():
     
         cursor.execute("select Customer_ID from Customer_Login order by Customer_ID desc limit 1;")
         customer_id = cursor.fetchall()[0][0] + 1
-        # try:
         try:
             cursor.execute(f"insert into Customer values({customer_id}, '{customer_first_name}', '{customer_second_name}', '{customer_third_name}', {customer_age}, '2004-02-29', '{customer_email}', 'Bronze', 0);")
             cursor.execute(f"insert into Customer_Login values({customer_id}, '{customer_username}', '{customer_password}');")
@@ -68,11 +67,10 @@ def customer_signup():
             connection.commit()
             return redirect('/customerlogin')
         except:
-            print("Error in query")
             connection.rollback()
-            return redirect('/customersignup')
+            return render_template('signup.html',status="FAIL")
     else:
-        return render_template('signup.html')
+        return render_template('signup.html',status="")
 
 global signin_attempts
 signin_attempts = 0
@@ -103,7 +101,6 @@ def customer_signin():
                     print("Incorrect login!")
                     return render_template('customer_login_fail.html')
             except:
-                print("Error in query")
                 return redirect("/customerlogin")
         else:
             signin_attempts = 0
@@ -135,16 +132,20 @@ def after_login():
 
 @app.route('/men_page', methods=['GET', 'POST'])
 def men_main_page():
-    cursor.execute("select distinct Category from Product_Inventory where Gender = 'Male';")
+    cursor.execute("select Image, Category_Name from Category where Gender = 'Male';")
     rows = cursor.fetchall()
-    categories = [row[0] for row in rows]
+    categories = {}
+    for row in rows:
+        categories[row[1]] = {'image': row[0]}
     return render_template('categories.html', categories=categories, department='Male')
 
 @app.route('/women_page', methods=['GET', 'POST'])
 def women_main_page():
-    cursor.execute("select distinct Category from Product_Inventory where Gender = 'Female';")
+    cursor.execute("select Image, Category_Name from Category where Gender = 'Female';")
     rows = cursor.fetchall()
-    categories = [row[0] for row in rows]
+    categories = {}
+    for row in rows:
+        categories[row[1]] = {'image': row[0]}
     return render_template('categories.html', categories=categories, department='Female')
 
 @app.route('/cart_page', methods=['GET', 'POST'])
@@ -269,12 +270,12 @@ def category_page():
     if (request.method == 'POST'):
         category = request.form['category']
         dept  = request.form['department']
-        cursor.execute(f"select Product_Inventory.Product_Name, Price, Description from Product_Inventory , Product_Description where Category = '{category}' and Gender = '{dept}' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
+        cursor.execute(f"select Product_Inventory.Product_Name, Price, Description, Image from Product_Inventory , Product_Description where Category = '{category}' and Gender = '{dept}' and Product_Inventory.Product_Name = Product_Description.Product_Name;")
         product_dict = {}
         rows = cursor.fetchall()
 
         for row in rows:
-            product_dict[row[0]] = {'description': row[2], 'price': row[1]}
+            product_dict[row[0]] = {'description': row[2], 'price': row[1], 'image': row[3]}
         return render_template('product_page.html', product_dict=product_dict, category=category, department = dept)
     return render_template('/')
 
@@ -288,9 +289,11 @@ def product_details():
         cursor.execute(f"select distinct Size from Product_Inventory where Product_Name = '{product_name}' and Stock > 0;")
         product_sizes = [row[0] for row in cursor.fetchall()]
 
-        cursor.execute(f"select Description from Product_Description where Product_Name = '{product_name}';")
-        product_description = cursor.fetchone()[0]
-        return render_template('product_details_page.html', product_name = product_name, product_price = product_price, sizes = product_sizes, product_description = product_description)
+        cursor.execute(f"select Description, Image from Product_Description where Product_Name = '{product_name}';")
+        result = cursor.fetchone()
+        product_description = result[0]
+        image_address = result[1]
+        return render_template('product_details_page.html', product_name = product_name, product_price = product_price, sizes = product_sizes, product_description = product_description, image_address = image_address)
 
     return redirect('/')
 
@@ -305,18 +308,19 @@ def add_to_cart():
     if (cursor.rowcount == 1):
         product_id = cursor.fetchone()[0]
         cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+        try:
+            cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+            if (cursor.rowcount == 1):
+                cursor.execute(f"update Cart_Items set Quantity = Quantity + 1 where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+                connection.commit()
 
-        if (cursor.rowcount == 1):
-            cursor.execute(f"update Cart_Items set Quantity = Quantity + 1 where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
-            connection.commit()
-
-        else:
-            cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
-            connection.commit()
-
+            else:
+                cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
+                connection.commit()
+        except:
+            connection.rollback()
     else:
-        print("Product not available")
-        return redirect('/men_page')
+        return render_template('successful_login.html', message = 'Stock not available!')
     return redirect('/cart_page')
 
 @app.route('/remove_from_cart', methods=['GET','POST'])
