@@ -7,29 +7,29 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 
 db = SQLAlchemy()
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# connection = pymysql.connect(
-#     host='localhost',
-#     user='root',
-#     password='hike'
-# )
-
 connection = pymysql.connect(
-    host='192.168.239.58',
-    port=3306,
-    user='udayk',
+    host='localhost',
+    user='root',
     password='hike'
-) 
+)
+
+# connection = pymysql.connect(
+#     host='192.168.239.58',
+#     port=3306,
+#     user='udayk',
+#     password='hike'
+# ) 
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
@@ -509,18 +509,19 @@ def manager_inventory_table_page():
                 success_message = "Invalid Product ID. Please eneter a valid ID"
      
     if query_params:
-        cursor.execute(sql_query, tuple(query_params.split(',')))
-        result = cursor.fetchall()
-        for r  in result:
-            product_col = {}
-            product_col['product_id'] = r[0]
-            product_col['product_name'] = r[1]
-            product_col['category'] = r[2]
-            product_col['size'] = r[3]
-            product_col['price'] = r[4]
-            product_col['quantity'] = r[5]
-            product_col['gender'] = r[6]
-            product_data.append(product_col) 
+        with connection.cursor() as cursor:
+            cursor.execute(sql_query, tuple(query_params.split(',')))
+            result = cursor.fetchall()
+            for r  in result:
+                product_col = {}
+                product_col['product_id'] = r[0]
+                product_col['product_name'] = r[1]
+                product_col['category'] = r[2]
+                product_col['size'] = r[3]
+                product_col['price'] = r[4]
+                product_col['quantity'] = r[5]
+                product_col['gender'] = r[6]
+                product_data.append(product_col) 
     return render_template('Manager_inventory_table.html', product_data = product_data, success_message= success_message)
 
 
@@ -531,17 +532,18 @@ def manager_alert_page():
 
     if request.method == 'POST':
 
-        cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Manager_Alert';")
-        result = cursor.fetchone()
-        if not (result[1] == 0 and result[2] == 0):
-            return redirect('/manager_home_page')
         
-        cursor.execute(f"update Concurrency_Manager set Write_user = 1 where Table_name = 'Manager_Alert';")
-        connection.commit()
-        alert_id = request.form['alertId']
-        quantity = request.form['quantity']
 
         with connection.cursor() as cursor:
+            cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Manager_Alert';")
+            result = cursor.fetchone()
+            if not (result[1] == 0 and result[2] == 0):
+                return redirect('/manager_home_page')
+            
+            cursor.execute(f"update Concurrency_Manager set Write_user = 1 where Table_name = 'Manager_Alert';")
+            connection.commit()
+            alert_id = request.form['alertId']
+            quantity = request.form['quantity']
             try:
                 cursor.execute("START TRANSACTION;")
                 cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s and approval='NO'", (alert_id,))
@@ -563,30 +565,31 @@ def manager_alert_page():
                 success_message = "Order placement failed!"
                 cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name = 'Manager_Alert';")
 
-    cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Manager_Alert';")
-    result = cursor.fetchone()
-    if not (result[2] == 0):
-        success_message = "Another user is performing write transaction on the database. Please try again later."
-        return render_template('manager_main_page.html', alert_data=[], empty_message=empty_message, success_message=success_message)
+    with connection.cursor() as cursor:
+        cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Manager_Alert';")
+        result = cursor.fetchone()
+        if not (result[2] == 0):
+            success_message = "Another user is performing write transaction on the database. Please try again later."
+            return render_template('manager_main_page.html', alert_data=[], empty_message=empty_message, success_message=success_message)
 
-    cursor.execute(f"update Concurrency_Manager set Read_user = 1 where Table_name = 'Manager_Alert';")
-    connection.commit()
+        cursor.execute(f"update Concurrency_Manager set Read_user = 1 where Table_name = 'Manager_Alert';")
+        connection.commit()
 
-    cursor.execute("SELECT * FROM manager_alert WHERE approval = 'No';")
-    alert_temp = cursor.fetchall()
-    alert_data = []
-    for alert in alert_temp:
-        alert_col = {}
-        alert_col['alert_id'] = alert[0]
-        alert_col['product_id'] = alert[1]
-        alert_col['quantity'] = alert[2]
-        alert_data.append(alert_col)
+        cursor.execute("SELECT * FROM manager_alert WHERE approval = 'No';")
+        alert_temp = cursor.fetchall()
+        alert_data = []
+        for alert in alert_temp:
+            alert_col = {}
+            alert_col['alert_id'] = alert[0]
+            alert_col['product_id'] = alert[1]
+            alert_col['quantity'] = alert[2]
+            alert_data.append(alert_col)
 
-    empty_message = "There are currently no alerts in the database." if not alert_data else None
-    cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name = 'Manager_Alert';")
-    connection.commit()
+        empty_message = "There are currently no alerts in the database." if not alert_data else None
+        cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name = 'Manager_Alert';")
+        connection.commit()
 
-    return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
+        return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
 
 @app.route('/analytics_homepage', methods=['GET', 'POST'])
 def alerts_main_page():
