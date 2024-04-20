@@ -48,7 +48,7 @@ def index():
 
 @app.route('/customersignup', methods=['GET', 'POST'])
 
-#Transaction 1: Customer Signup
+#Non-Conflicting Transaction 1: Customer Signup
 def customer_signup():
     if request.method == 'POST':
         customer_first_name = request.form['name']; customer_second_name  = ""; customer_third_name = "";
@@ -63,17 +63,21 @@ def customer_signup():
         cursor.execute("select Customer_ID from Customer_Login order by Customer_ID desc limit 1;")
         customer_id = cursor.fetchall()[0][0] + 1
         try:
-            cursor.execute(f"insert into Customer values({customer_id}, '{customer_first_name}', '{customer_second_name}', '{customer_third_name}', {customer_age}, '2004-02-29', '{customer_email}', 'Bronze', 0);")
-            cursor.execute(f"insert into Customer_Login values({customer_id}, '{customer_username}', '{customer_password}');")
-            cursor.execute(f"insert into Addresses values({customer_id}, '{customer_address}', {customer_postal_code});")
-            cursor.execute(f"insert into Phone_Numbers values({customer_id}, '{customer_no}');")
-            connection.commit()
-            return redirect('/customerlogin')
+            with connection.cursor() as cursor:
+                cursor.execute("START TRANSACTION;")
+                cursor.execute(f"insert into Customer values({customer_id}, '{customer_first_name}', '{customer_second_name}', '{customer_third_name}', {customer_age}, '2004-02-29', '{customer_email}', 'Bronze', 0);")
+                cursor.execute(f"insert into Customer_Login values({customer_id}, '{customer_username}', '{customer_password}');")
+                cursor.execute(f"insert into Addresses values({customer_id}, '{customer_address}', {customer_postal_code});")
+                cursor.execute(f"insert into Phone_Numbers values({customer_id}, '{customer_no}');")
+                cursor.execute("COMMIT;")
         except:
-            connection.rollback()
+            cursor.execute("ROLLBACK;")
             return render_template('signup.html',status="FAIL")
+        return redirect('/customerlogin')
+
     else:
         return render_template('signup.html',status="")
+
 
 global signin_attempts
 signin_attempts = 0
@@ -144,13 +148,6 @@ def cart_page():
     total_price = 0
     cart_items = []
     
-    cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
-    result = cursor.fetchone()
-    if result[2] != 0:
-        return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
-    
-    cursor.execute(f"update Concurrency_Manager set Read_user = 1;")
-    connection.commit()
     if rows:
         for row in rows:
             quantity = row[2]
@@ -171,8 +168,6 @@ def cart_page():
         cursor.execute(f'select Phone_Number from Phone_Numbers where Customer_ID = {user_id};')
         phone_numbers = [row[0] for row in cursor.fetchall()]
 
-        cursor.execute(f"update Concurrency_Manager set Read_user = 0;")
-        connection.commit()
         return render_template('cart_new.html', cart_items=cart_items, total_price=total_price, addresses=addresses, phone_numbers=phone_numbers)
     else:
         return render_template('cart_empty.html')
@@ -181,101 +176,103 @@ def cart_page():
 def forgot_password():
     return render_template('forgot_password.html')
 
-#Transaction 2: Placing Order Conflicting
+#Conlicting Transaction 1: Placing Order Conflicting
 @app.route('/place_order', methods=['POST'])
 def place_order():
     global product_details
     global user_details
     if (request.method == 'POST'):
+        with connection.cursor() as cursor:
+            cursor.execute("START TRANSACTION;")
+            cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
+            result = cursor.fetchone()
+            if not (result[1] == 0 and result[2] == 0):
+                print("Another user is performing write transaction on the database. Please try again later.")
+                return redirect('/cart_page')
+            
+            cursor.execute(f"update Concurrency_Manager set Write_user = 1 where Table_name like 'Product_Inventory';")
+            cursor.execute("COMMIT;")
+            data = request.json
+            payment_status = data['payment_status']
+            address = data['address']
+            phone_number = str(data['phone_number']).strip()
+            cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
+            row = cursor.fetchone()
+            user_name = row[0] + " " + row[1] + " " + row[2]
+            cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
+                cursor.execute("COMMIT;")
+                return render_template('cart_empty.html')
+            total_price = 0
+            cart_dict = {}
+            for row in rows:
+                quantity = row[2]
+                product_id = row[1]
+                cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id} and Stock > {quantity};")
+                product_details = cursor.fetchone()
+                product_name = product_details[0]
+                price = product_details[1]
+                size = product_details[2]
+                product_id = product_details[3]
+                total_price += price * quantity
+                cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_id}
+            
+            cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
+            if cursor.rowcount == 0:
+                order_id = 1
+            else:
+                order_id = cursor.fetchone()[0] + 1
+            
+            cursor.execute("select Delivery_ID from Deliveries order by Delivery_ID desc limit 1;")
+            if cursor.rowcount == 0:
+                delivery_id = 1
+            else:
+                delivery_id = cursor.fetchone()[0] + 1
 
-        cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
-        result = cursor.fetchone()
-        if not (result[1] == 0 and result[2] == 0):
-            return redirect('/cart_page')
-        
-        cursor.execute(f"update Concurrency_Manager set Write_user = 1 where Table_name like 'Product_Inventory';")
-        connection.commit()
-        data = request.json
-        payment_status = data['payment_status']
-        address = data['address']
-        phone_number = str(data['phone_number']).strip()
-        cursor.execute(f"select First_name, Middle_name, Last_Name from Customer where Customer_ID = {user_id};")
-        row = cursor.fetchone()
-        user_name = row[0] + " " + row[1] + " " + row[2]
-        cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
-        rows = cursor.fetchall()
-        if len(rows) == 0:
-            cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
-            connection.commit()
-            return render_template('cart_empty.html')
-        total_price = 0
-        cart_dict = {}
-        for row in rows:
-            quantity = row[2]
-            product_id = row[1]
-            cursor.execute(f"select Product_Name, Price, Size, Product_ID from Product_Inventory where Product_ID = {product_id} and Stock > {quantity};")
-            product_details = cursor.fetchone()
-            product_name = product_details[0]
-            price = product_details[1]
-            size = product_details[2]
-            product_id = product_details[3]
-            total_price += price * quantity
-            cart_dict[product_name] = {'quantity': quantity, 'price': price, 'size': size, 'product_id': product_id}
-        
-        cursor.execute("select Order_ID from Orders order by Order_ID desc limit 1;")
-        if cursor.rowcount == 0:
-            order_id = 1
-        else:
-            order_id = cursor.fetchone()[0] + 1
-        
-        cursor.execute("select Delivery_ID from Deliveries order by Delivery_ID desc limit 1;")
-        if cursor.rowcount == 0:
-            delivery_id = 1
-        else:
-            delivery_id = cursor.fetchone()[0] + 1
+            try:
+                current_date = datetime.now().strftime('%Y-%m-%d')
+                cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
+                cursor.execute("COMMIT;")
+                cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
+                cursor.execute("COMMIT;")
+                for product_name, attributes in cart_dict.items():
+                    cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
+                    cursor.execute("COMMIT;")
+                    cursor.execute(f"select Stock from Product_Inventory where Product_ID = {attributes['product_id']};")
+                    stock = cursor.fetchone()[0]
+                    if stock < attributes['quantity']:
+                        print("Stock not available")
+                        cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
+                        cursor.execute("COMMIT;")
+                        return redirect('/cart_page')
+                    
+                    cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
+                    cursor.execute("COMMIT;")
+                    cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
+                    cursor.execute("COMMIT;")
 
-        try:
-            current_date = datetime.now().strftime('%Y-%m-%d')
-            cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
-            connection.commit()
-            print(phone_number)
-            cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
-            connection.commit()
-            for product_name, attributes in cart_dict.items():
-                cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
-                connection.commit()
-                cursor.execute(f"select Stock from Product_Inventory where Product_ID = {attributes['product_id']};")
-                stock = cursor.fetchone()[0]
-                if stock < attributes['quantity']:
-                    print("Stock not available")
-                    cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
-                    connection.commit()
-                    return redirect('/cart_page')
-                
-                cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
-                connection.commit()
-                cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
-                connection.commit()
+            
+                user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
+                product_details = cart_dict
 
-        
-            user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
-            product_details = cart_dict
+                cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';;")
+                cursor.execute("COMMIT;")
+                return redirect('/order_confirmation')
+            except:
+                cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
+                cursor.execute("ROLLBACK;")
+                return redirect('/cart_page')
 
-            cursor.execute(f"update Concurreny_Manager set Write_user = 0;")
-            connection.commit()
-            return redirect('/order_confirmation')
-        except:
-            cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
-            connection.commit()
-            connection.rollback()
-            return redirect('/cart_page', status = 'FAIL')
-    
 @app.route('/order_confirmation', methods=['GET'])
 def orderconfirmation():
     global user_details
-    print(user_details)
     global product_details
+    print(user_details)
+    print(product_details)
     if request.method == 'GET':
+
         return render_template('order_confirmation.html', user_details=user_details, product_attributes= product_details)
 
 @app.route('/upi', methods=['GET', 'POST'])
@@ -310,7 +307,7 @@ def category_page():
     return render_template('/')
 
 @app.route('/product_details', methods = ['POST'])
-def product_details():
+def product_details_():
     if request.method == 'POST':
         cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
         result = cursor.fetchone()
@@ -338,7 +335,7 @@ def product_details():
 
     return redirect('/')
 
-#Transaction 3: Adding to Cart
+#Non-Conflicting Transaction 2: Adding to Cart
 @app.route('/addtocart', methods=['GET','POST'])
 def add_to_cart():
     data = request.json
@@ -346,49 +343,43 @@ def add_to_cart():
     product_name = data['name']
     size = data['size']
     quantity = data['quantity']
-    cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Product Inventory';")
-    result = cursor.fetchone()
-    if result[2] != 0:
-        return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
-    
-    cursor.execute(f"update Concurrency_Manager set Read_user = 1 where Table_name like 'Product_Inventory';")
-    connection.commit()
-
-    cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product_name}' and Size = '{size}' and Stock > {quantity};")
-    if (cursor.rowcount == 1):
-        product_id = cursor.fetchone()[0]
-        cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
-        try:
-            cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("START TRANSACTION;")
+            cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product_name}' and Size = '{size}' and Stock > {quantity};")
             if (cursor.rowcount == 1):
-                cursor.execute(f"update Cart_Items set Quantity = Quantity + 1 where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
-                connection.commit()
+                product_id = cursor.fetchone()[0]
+                cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+                if (cursor.rowcount == 1):
+                    cursor.execute(f"update Cart_Items set Quantity = Quantity + {quantity} where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+                    cursor.execute("COMMIT;")
 
-            else:
-                cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
-                connection.commit()
+                else:
+                    cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
+                    cursor.execute("COMMIT;")
+                    connection.commit()
+            else: 
+                return render_template('successful_login.html', message = 'Stock not available!')
+            
+    except:
+        cursor.execute("ROLLBACK;")
+        return render_template('successful_login.html', message = 'Item could not be added to cart!')
+        
+    finally:
+        return redirect('/cart_page')
 
-            cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name like 'Product_Inventory';")
-            connection.commit()
-        except:
-            connection.rollback()
-            return render_template('successful_login.html', message = 'Item could not be added!')
-    else:
-        cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name like 'Product_Inventory';")
-        connection.commit()
-        return render_template('successful_login.html', message = 'Stock not available!')
-    return redirect('/cart_page')
-
-#Transaction 4: Removing from Cart
+#Non-Conflicting Transaction 3: Removing from Cart
 @app.route('/remove_from_cart', methods=['GET','POST'])
 def removing_item():
     data = request.json
     product_id = data['product_id']
     try:
-        cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
-        connection.commit()
+        with connection.cursor() as cursor:
+            cursor.execute("START TRANSACTION;")
+            cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {product_id};")
+            cursor.execute("COMMIT;")
     except:
-        connection.rollback()
+        cursor.execute("ROLLBACK;")
         return render_template('successful_login.html', message = 'Item could not be removed!')
     return redirect('/cart_page')
 
@@ -490,7 +481,7 @@ def manager_inventory_page():
             return render_template('Manager_inventory_order.html', error_message = error_message)
     return render_template('Manager_inventory_order.html', error_message = error_message)
 
-
+#Non-Conflicting Transaction 4: Manager Viewing Inventory
 @app.route('/manager_inventory_table_page',methods =['GET','POST'])
 def manager_inventory_table_page():
     success_message = None
@@ -498,17 +489,24 @@ def manager_inventory_table_page():
     query_params = request.args.get('query_params')
     product_data = []
     if request.method == 'POST':
-        product_id = request.form['productId']
-        quantity = request.form['quantity']
-        cursor.execute("SELECT product_id from product_inventory where product_id = %s",(product_id,))
-        product_id_new = cursor.fetchone()
-        if product_id_new:
-            product_id_new = product_id_new[0]
-            cursor.execute("UPDATE product_inventory SET stock = stock + %s where product_id = %s",(quantity,product_id_new))
-            connection.commit()
-            success_message = "Order placed successfully!"
-        else:
-            success_message = "Invalid Product ID. Please eneter a valid ID"
+        with connection.cursor() as cursor:
+            cursor.execute("START TRANSACTION;")
+            product_id = request.form['productId']
+            quantity = request.form['quantity']
+            cursor.execute("SELECT product_id from product_inventory where product_id = %s",(product_id,))
+            product_id_new = cursor.fetchone()
+            if product_id_new:
+                product_id_new = product_id_new[0]
+                cursor.start
+                try:
+                    cursor.execute("UPDATE product_inventory SET stock = stock + %s where product_id = %s",(quantity,product_id_new))
+                    cursor.execute("COMMIT;")
+                    success_message = "Order placed successfully!"
+                except:
+                    cursor.execute("ROLLBACK;")
+                    success_message = "Updating Inventory failed!"
+            else:
+                success_message = "Invalid Product ID. Please eneter a valid ID"
      
     if query_params:
         cursor.execute(sql_query, tuple(query_params.split(',')))
@@ -524,25 +522,9 @@ def manager_inventory_table_page():
             product_col['gender'] = r[6]
             product_data.append(product_col) 
     return render_template('Manager_inventory_table.html', product_data = product_data, success_message= success_message)
-    success_message = None
-    if request.method == 'POST':
-        product_id = request.form['productID']
-        quautity = request.form['quantity']
-        cursor.execute("SELECT product_id from product_inventory where product_id = %s",(product_id,))
-        product_id_new = cursor.fetchone()
-        if product_id_new:
-            product_id_new = product_id_new[0]
-            cursor.execute("UPDATE product_inventory SET quantity = quantity + %s where product_id = %s",(quautity,product_id_new))
-            connection.commit()
-            success_message = "Order placed successfully!"
-        else:
-            success_message = "Invalid Product ID. Please enete r a valid ID"
 
-    cursor.execute(sql_query, tuple(query_params))
-    result = cursor.fecthall()
-    print(result)
-    return render_template('Manager_inventory_table.html')
 
+#Conflicting Transaction 2: Manager Alert
 @app.route('/manager_alert_page', methods=['GET', 'POST'])
 def manager_alert_page():
     success_message = None
@@ -558,20 +540,28 @@ def manager_alert_page():
         connection.commit()
         alert_id = request.form['alertId']
         quantity = request.form['quantity']
-        cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s and approval='NO'", (alert_id,))
-        product_id = cursor.fetchone()
-        if product_id:
-            product_id = product_id[0]
-            cursor.execute("INSERT INTO manager_orders (product_id, quantity, alert_id) VALUES (%s, %s, %s)", (product_id, quantity, alert_id))
-            connection.commit()
-            cursor.execute("UPDATE manager_alert SET approval = 'YES' WHERE alert_id = %s", (alert_id,))
-            connection.commit()
-            success_message = "Order placed successfully!"
-        else:
-            success_message = "Invalid Alert ID. Please enter a valid ID."
 
-        cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name = 'Manager_Alert';")
-        connection.commit()
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute("START TRANSACTION;")
+                cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s and approval='NO'", (alert_id,))
+                product_id = cursor.fetchone()
+                if product_id:
+                    product_id = product_id[0]
+                    cursor.execute("INSERT INTO manager_orders (product_id, quantity, alert_id) VALUES (%s, %s, %s)", (product_id, quantity, alert_id))
+                    connection.commit()
+                    cursor.execute("UPDATE manager_alert SET approval = 'YES' WHERE alert_id = %s", (alert_id,))
+                    connection.commit()
+                    success_message = "Order placed successfully!"
+                else:
+                    success_message = "Invalid Alert ID. Please enter a valid ID."
+
+                cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name = 'Manager_Alert';")
+                cursor.execute("COMMIT")
+            except:
+                cursor.execute("ROLLBACK")
+                success_message = "Order placement failed!"
+                cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name = 'Manager_Alert';")
 
     cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Manager_Alert';")
     result = cursor.fetchone()
