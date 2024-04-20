@@ -6,22 +6,22 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 
 db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-connection = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='hike'
-)
+# connection = pymysql.connect(
+#     host='localhost',
+#     user='root',
+#     password='hike'
+# )
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
@@ -30,12 +30,12 @@ connection = pymysql.connect(
 #     password='hike'
 # ) 
 
-# connection = pymysql.connect(
-#     host='192.168.239.58',
-#     port=3306,
-#     user='kingmehul',
-#     password='hike'
-# ) 
+connection = pymysql.connect(
+    host='192.168.239.58',
+    port=3306,
+    user='kingmehul',
+    password='hike'
+) 
 
 cursor = connection.cursor()
 cursor.execute("USE hike;")
@@ -85,6 +85,7 @@ global product_details
 
 global user_address
 global user_phone_number
+
 @app.route('/customerlogin', methods=['GET', 'POST'])
 def customer_signin():
     global signin_attempts
@@ -112,24 +113,6 @@ def customer_signin():
             return render_template('customer_login_fail3.html')
     else:
         return render_template('customer.html')
-    
-@app.route('/managerlogin', methods=['GET', 'POST'])
-def manager_login():
-    if request.method == 'POST':
-        manager_email = request.form['manager_email']
-        password = request.form['password']
-
-        try:
-            cursor.execute(f"select * from Manager_Login M1, Managers M2 where M1.Manager_ID = M2.Manager_ID and Email = '{manager_email}' and Password = '{password}';")
-            if (len(cursor.fetchall()) > 0):
-                return redirect('/manager_page')
-            else:
-                print("Incorrect login!")
-                return redirect('/managerlogin')
-        except:
-            print("Error in query")
-            return redirect('/managerlogin')
-    return render_template('manager.html')
 
 @app.route('/main_page', methods=['GET', 'POST'])
 def after_login():
@@ -408,39 +391,6 @@ def removing_item():
         return render_template('successful_login.html', message = 'Item could not be removed!')
     return redirect('/cart_page')
 
-@app.route('/manager_page', methods=['GET', 'POST'])
-def manager_main_page():
-    success_message = None
-
-    if request.method == 'POST':
-        alert_id = request.form['alertId']
-        quantity = request.form['quantity']
-        cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s and approval='NO'", (alert_id,))
-        product_id = cursor.fetchone()
-        if product_id:
-            product_id = product_id[0]
-            cursor.execute("INSERT INTO manager_orders (product_id, quantity, alert_id) VALUES (%s, %s, %s)", (product_id, quantity, alert_id))
-            connection.commit()
-            cursor.execute("UPDATE manager_alert SET approval = 'YES' WHERE alert_id = %s", (alert_id,))
-            connection.commit()
-            success_message = "Order placed successfully!"
-        else:
-            success_message = "Invalid Alert ID. Please enter a valid ID."
-
-    cursor.execute("SELECT * FROM manager_alert WHERE approval = 'No';")
-    alert_temp = cursor.fetchall()
-    alert_data = []
-    for alert in alert_temp:
-        alert_col = {}
-        alert_col['alert_id'] = alert[0]
-        alert_col['product_id'] = alert[1]
-        alert_col['quantity'] = alert[2]
-        alert_data.append(alert_col)
-
-    empty_message = "There are currently no alerts in the database." if not alert_data else None
-
-    return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
-
 @app.route('/customer_orders', methods = ['GET', 'POST'])
 def customer_orders():
     cursor.execute(f"select * from Orders where Customer_ID = {user_id};")
@@ -485,5 +435,70 @@ def return_item():
     cursor.execute(f"insert into Returns values({order_id}, {product_id}, {delivery_id}, {user_id});")
     connection.commit()
     return render_template('return_confirmed.html')
+
+@app.route('/managerlogin', methods=['GET', 'POST'])
+def manager_login():
+    if request.method == 'POST':
+        manager_email = request.form['manager_email']
+        password = request.form['password']
+
+        try:
+            cursor.execute(f"select * from Manager_Login M1, Managers M2 where M1.Manager_ID = M2.Manager_ID and Email = '{manager_email}' and Password = '{password}';")
+            if (len(cursor.fetchall()) > 0):
+                return redirect('/manager_home_page')
+            else:
+                print("Incorrect login!")
+                return redirect('/managerlogin')
+        except:
+            print("Error in query")
+            return redirect('/managerlogin')
+    return render_template('manager.html')
+
+@app.route('/manager_home_page',methods =['GET','POST'])
+def manager_home_page():
+    return render_template('Manager_home_page.html')
+
+@app.route('/manager_inventory_page',methods =['GET','POST'])
+def manager_inventory_page():
+    return render_template('Manager_inventory_order.html')
+
+
+@app.route('/manager_inventory_table_page',methods =['GET','POST'])
+def manager_inventory_table_page():
+    return render_template('Manager_inventory_table.html')
+
+@app.route('/manager_alert_page', methods=['GET', 'POST'])
+def manager_alert_page():
+    success_message = None
+
+    if request.method == 'POST':
+        alert_id = request.form['alertId']
+        quantity = request.form['quantity']
+        cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s and approval='NO'", (alert_id,))
+        product_id = cursor.fetchone()
+        if product_id:
+            product_id = product_id[0]
+            cursor.execute("INSERT INTO manager_orders (product_id, quantity, alert_id) VALUES (%s, %s, %s)", (product_id, quantity, alert_id))
+            connection.commit()
+            cursor.execute("UPDATE manager_alert SET approval = 'YES' WHERE alert_id = %s", (alert_id,))
+            connection.commit()
+            success_message = "Order placed successfully!"
+        else:
+            success_message = "Invalid Alert ID. Please enter a valid ID."
+
+    cursor.execute("SELECT * FROM manager_alert WHERE approval = 'No';")
+    alert_temp = cursor.fetchall()
+    alert_data = []
+    for alert in alert_temp:
+        alert_col = {}
+        alert_col['alert_id'] = alert[0]
+        alert_col['product_id'] = alert[1]
+        alert_col['quantity'] = alert[2]
+        alert_data.append(alert_col)
+
+    empty_message = "There are currently no alerts in the database." if not alert_data else None
+
+    return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
+
 if __name__ == '__main__':
     app.run(debug=True)

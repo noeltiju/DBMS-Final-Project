@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -112,32 +113,24 @@
             text-decoration: none;
         }
     </style>
-
-<script>
-    // Define a function to handle form validation and success message display
-    function validateForm() {
-        var alertId = document.getElementById("alertId").value.trim();
-        var quantity = document.getElementById("quantity").value.trim();
-
-        // Perform form validation
-        if (alertId === "" || quantity === "") {
-            alert("Please fill in both Alert ID and Quantity fields.");
-            return false;
+    <script>
+        function validateForm() {
+            var alertId = document.getElementById("productID").value.trim();
+            var quantity = document.getElementById("quantity").value.trim();
+            if (alertId === "" || quantity === "") {
+                alert("Please fill in both Alert ID and Quantity fields.");
+                return false;
+            }
+            return true;
         }
 
-        // Return true to submit the form
-        return true;
-    }
-
-    // Display the success message if it exists
-    window.onload = function() {
-        var successMessage = "{{ success_message }}"; // Get the success message from Flask
-        if (successMessage && successMessage !== "None") {
-            alert(successMessage); // Display the success message
-        }
-    };
-</script>
-
+        window.onload = function () {
+            var successMessage = "{{ success_message }}"; 
+            if (successMessage && successMessage !== "None") {
+                alert(successMessage); 
+            }
+        };
+    </script>
 </head>
 
 <body>
@@ -152,33 +145,39 @@
         <div class="admin-text">Admin</div>
         <table>
             <tr>
-                <th>Alert ID</th>
                 <th>Product ID</th>
-                <th>Quantity</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Size</th>
+                <th>Stock</th>
+                <th>Genre</th>
             </tr>
-            {% if alert_data %}
-            {% for alert in alert_data %}
-            <tr>
-                <td>{{ alert.alert_id }}</td>  
-                <td>{{ alert.product_id }}</td>
-                <td>{{ alert.quantity }}</td>
-            </tr>
-            {% endfor %}
+            {% if product_inventory %}
+                {% for product in product_inventory %}
+                    <tr>
+                        <td>{{ product.product_id }}</td>
+                        <td>{{ product.product_name }}</td>
+                        <td>{{ product.category }}</td>
+                        <td>{{ product.size }}</td>
+                        <td>{{ product.stock }}</td>
+                        <td>{{ product.genre }}</td>
+                    </tr>
+                {% endfor %}
             {% else %}
-            <tr>
-                <td colspan="4">{{ empty_message }}</td>
-            </tr>
+                <tr>
+                    <td colspan="6">{{ empty_message }}</td>
+                </tr>
             {% endif %}
         </table>
 
+        <!-- Form to place order, similar to before -->
         <form action="/manager_alert_page" method="post" onsubmit="return validateForm()">
             <div class="input-container">
-                <input type="text" placeholder="Alert ID" name="alertId" id="alertId" />
+                <input type="text" placeholder="Product ID" name="productId" id="productId" />
                 <input type="number" placeholder="Quantity" name="quantity" id="quantity" />
                 <button type="submit" class="place-order-btn">Place Order</button>
             </div>
         </form>
-        
     </div>
 
     <div class="footer">
