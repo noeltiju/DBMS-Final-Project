@@ -2,26 +2,27 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 from triggers import triggers_commands
+from analytics import *
 from datetime import datetime, timedelta
 app = Flask(__name__)
 
 db = SQLAlchemy()
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:"Appuannu12*@localhost/hike_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://udayk:hike@192.168.239.58:3306/hike_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://kingmehul:hike@192.168.239.58:3306/hike_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# connection = pymysql.connect(
-#     host='localhost',
-#     user='root',
-#     password='hike'
-# )
+connection = pymysql.connect(
+    host='localhost',
+    user='root',
+    password='hike'
+)
 
 # connection = pymysql.connect(
 #     host='192.168.239.58',
@@ -30,12 +31,12 @@ db.init_app(app)
 #     password='hike'
 # ) 
 
-connection = pymysql.connect(
-    host='192.168.239.58',
-    port=3306,
-    user='kingmehul',
-    password='hike'
-) 
+# connection = pymysql.connect(
+#     host='192.168.239.58',
+#     port=3306,
+#     user='kingmehul',
+#     password='hike'
+# ) 
 
 cursor = connection.cursor()
 cursor.execute("USE hike;")
@@ -483,7 +484,7 @@ def manager_inventory_page():
         cursor.execute(sql_query, tuple(query_params))
         result = cursor.fetchone()
         if result:
-            manager_inventory_table_page(sql_query, query_params)
+            return redirect(url_for('manager_inventory_table_page', sql_query=sql_query, query_params=query_params))
         else:
             error_message = "Entered details do not exist in the inventory."
             return render_template('Manager_inventory_order.html', error_message = error_message)
@@ -491,7 +492,38 @@ def manager_inventory_page():
 
 
 @app.route('/manager_inventory_table_page',methods =['GET','POST'])
-def manager_inventory_table_page(sql_query, query_params):
+def manager_inventory_table_page():
+    success_message = None
+    sql_query = request.args.get('sql_query')
+    query_params = request.args.get('query_params')
+    product_data = []
+    if request.method == 'POST':
+        product_id = request.form['productId']
+        quantity = request.form['quantity']
+        cursor.execute("SELECT product_id from product_inventory where product_id = %s",(product_id,))
+        product_id_new = cursor.fetchone()
+        if product_id_new:
+            product_id_new = product_id_new[0]
+            cursor.execute("UPDATE product_inventory SET stock = stock + %s where product_id = %s",(quantity,product_id_new))
+            connection.commit()
+            success_message = "Order placed successfully!"
+        else:
+            success_message = "Invalid Product ID. Please eneter a valid ID"
+     
+    if query_params:
+        cursor.execute(sql_query, tuple(query_params.split(',')))
+        result = cursor.fetchall()
+        for r  in result:
+            product_col = {}
+            product_col['product_id'] = r[0]
+            product_col['product_name'] = r[1]
+            product_col['category'] = r[2]
+            product_col['size'] = r[3]
+            product_col['price'] = r[4]
+            product_col['quantity'] = r[5]
+            product_col['gender'] = r[6]
+            product_data.append(product_col) 
+    return render_template('Manager_inventory_table.html', product_data = product_data, success_message= success_message)
     success_message = None
     if request.method == 'POST':
         product_id = request.form['productID']
@@ -565,6 +597,33 @@ def manager_alert_page():
     connection.commit()
 
     return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
+
+@app.route('/analytics_homepage', methods=['GET', 'POST'])
+def alerts_main_page():
+    return render_template('analytics_home_page.html')
+
+@app.route('/order_analytics', methods=['GET', 'POST'])
+def order_analytics_page():
+    val = order_analytics(cursor, '2024-03-01', '2025-05-01')
+    return render_template('order_analytics.html',  value = val)
+
+@app.route('/product_analytics', methods=['GET', 'POST'])
+def product_analytics_page():
+    product_id = request.form['product_id']
+    if product_id:
+        val = product_analytics(cursor, product_id,'2024-03-01', '2025-05-01')
+        return render_template('product_analytics.html',  value = val)
+    
+    return redirect('/analytics_homepage')
+
+@app.route('/customer_analytics', methods=['GET', 'POST'])
+def customer_analytics_page():
+    customer_id = request.form['customer_id']
+    if customer_id:
+        val = customer_analytics(cursor, customer_id,'2024-03-01', '2025-05-01')
+        return render_template('customer_analytics.html', value = val)
+    return redirect('/analytics_homepage')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

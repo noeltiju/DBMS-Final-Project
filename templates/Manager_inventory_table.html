@@ -117,7 +117,7 @@
         function validateForm() {
             var productId = document.getElementById("productId").value.trim();
             var quantity = document.getElementById("quantity").value.trim();
-            if (alertId === "" || quantity === "") {
+            if (productId === "" || quantity === "") {
                 alert("Please fill in both Product ID and Quantity fields.");
                 return false;
             }
@@ -128,6 +128,7 @@
             var successMessage = "{{ success_message }}"; 
             if (successMessage && successMessage !== "None") {
                 alert(successMessage); 
+                window.location.href = "/manager_inventory_page";
             }
         };
     </script>
@@ -150,17 +151,17 @@
                 <th>Category</th>
                 <th>Size</th>
                 <th>Stock</th>
-                <th>Genre</th>
+                <th>Gender</th>
             </tr>
-            {% if product_inventory %}
-                {% for product in product_inventory %}
+            {% if product_data %}
+                {% for product in product_data %}
                     <tr>
                         <td>{{ product.product_id }}</td>
                         <td>{{ product.product_name }}</td>
                         <td>{{ product.category }}</td>
                         <td>{{ product.size }}</td>
-                        <td>{{ product.stock }}</td>
-                        <td>{{ product.genre }}</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>{{ product.gender }}</td>
                     </tr>
                 {% endfor %}
             {% else %}

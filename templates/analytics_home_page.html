@@ -124,14 +124,20 @@
     </div>
     <div class="admin-heading">ADMIN - Home Page</div>
     <div class="container">
-        <a href="/manager_inventory_page">
-            <div class="box green">Place Order</div>
-        </a>
-        <a href="/analytics_homepage">
-            <div class="box green">View Analytics</div>
-        </a>
-        <a href="/manager_alert_page">
-            <div class="box red">View Alerts</div>
+        <div class="box green">Product
+            <form action="/product_analytics" method="POST">
+                <input type="number" name="product_id" placeholder="Product ID" required>
+                <button type="submit">Analyze</button>
+            </form>
+        </div>
+        <div class="box red">Customer
+            <form action="/customer_analytics" method="POST">
+                <input type="number" name="customer_id" placeholder="Customer ID" required>
+                <button type="submit">Analyze</button>
+            </form>
+        </div>
+        <a href="/order_analytics">
+            <div class="box green">Order</div>
         </a>
     </div>
     <div class="footer">
