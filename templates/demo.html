@@ -121,7 +121,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .input-field {
@@ -141,7 +141,6 @@
             transition: background-color 0.3s ease;
         }
 
-
         .analyse-button:hover {
             background-color: #0056b3;
         }
@@ -160,27 +159,21 @@
         <div class="box blue">
             Product
             <div class="input-container">
-                <form action="/product_analytics" method="POST">
-                    <input type="number" name="product_id" placeholder="Product ID" required>
-                    <button type="submit">Analyze</button>
-                </form>
+                <input type="text" class="input-field" placeholder="Product ID">
+                <button class="analyse-button">Analyse</button>
+            </div>
+        </div>
+        <div class="box green">
+            Customer
+            <div class="input-container">
+                <input type="text" class="input-field" placeholder="Customer ID">
+                <button class="analyse-button">Analyse</button>
             </div>
         </div>
         <div class="box red">
-            Customer
-            <div class="input-container">
-                <form action="/customer_analytics" method="POST">
-                    <input type="number" name="customer_id" placeholder="Customer ID" required>
-                    <button type="submit">Analyze</button>
-                </form>
-            </div>
+            Order
+
         </div>
-        <a href="/order_analytics">
-            <div class="box green">Order</div>
-        </a>
-    </div>
-    <div class="footer">
-        <a href="/">Contact us</a>
     </div>
 </body>
 
