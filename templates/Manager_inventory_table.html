@@ -115,10 +115,10 @@
     </style>
     <script>
         function validateForm() {
-            var alertId = document.getElementById("productID").value.trim();
+            var productId = document.getElementById("productId").value.trim();
             var quantity = document.getElementById("quantity").value.trim();
             if (alertId === "" || quantity === "") {
-                alert("Please fill in both Alert ID and Quantity fields.");
+                alert("Please fill in both Product ID and Quantity fields.");
                 return false;
             }
             return true;
@@ -170,8 +170,7 @@
             {% endif %}
         </table>
 
-        <!-- Form to place order, similar to before -->
-        <form action="/manager_alert_page" method="post" onsubmit="return validateForm()">
+        <form action="/manager_inventory_table_page" method="post" onsubmit="return validateForm()">
             <div class="input-container">
                 <input type="text" placeholder="Product ID" name="productId" id="productId" />
                 <input type="number" placeholder="Quantity" name="quantity" id="quantity" />

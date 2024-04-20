@@ -217,6 +217,13 @@
 
         return true;
     }
+
+    window.onload = function(){
+        var errorMessage = "{{ error_message }}";
+        if (errorMessage !== "None") {
+            alert(errorMessage);
+        }
+    };
 </script>
 
 </head>
@@ -229,25 +236,27 @@
     </div>
     <div class="admin-heading">ADMIN - Inventory Order</div>
     <div class="container">
-        <div class="input-container">
-            <label for="productId">Enter Product ID:</label>
-            <input type="text" id="productId" placeholder="Product ID" />
-        </div>
-        <div class="input-container">
-            <label for="productName">Enter Product Name:</label>
-            <input type="text" id="productName" placeholder="Product Name" />
-        </div>
-        <div class="input-container">
-            <label for="category">Enter Category:</label>
-            <input type="text" id="category" placeholder="Category" />
-        </div>
-        <!-- Call validateForm function onclick and redirect if successful -->
-        <button class="place-order-btn" onclick="if(validateForm()) window.location.href='/manager_inventory_table_page';">Place Order</button>
+        <form action="/manager_inventory_page" method="post" onsubmit="return validateForm()">
+            <div class="input-container">
+                <label for="productId">Enter Product ID:</label>
+                <input type="text" id="productId" name="productId" placeholder="Product ID" />
+            </div>
+            <div class="input-container">
+                <label for="productName">Enter Product Name:</label>
+                <input type="text" id="productName" name="productName" placeholder="Product Name" />
+            </div>
+            <div class="input-container">
+                <label for="category">Enter Category:</label>
+                <input type="text" id="category" name="category" placeholder="Category" />
+            </div>
+            <button type="submit" class="place-order-btn">Place Order</button>
+        </form>
     </div>
     <div class="footer">
         <a href="/">Contact us</a>
     </div>
 </body>
+
 
 
 </html>

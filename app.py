@@ -192,7 +192,7 @@ def place_order():
         if not (result[1] == 0 and result[2] == 0):
             return redirect('/cart_page')
         
-        cursor.execute(f"update Concurrency_Manager set Write_user = 1;")
+        cursor.execute(f"update Concurrency_Manager set Write_user = 1 where Table_name like 'Product_Inventory';")
         connection.commit()
         data = request.json
         payment_status = data['payment_status']
@@ -204,7 +204,7 @@ def place_order():
         cursor.execute(f"select * from Cart_Items where Cart_ID = 'Cart_{user_id}';")
         rows = cursor.fetchall()
         if len(rows) == 0:
-            cursor.execute(f"update Concurrency_Manager set Write_user = 0;")
+            cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
             connection.commit()
             return render_template('cart_empty.html')
         total_price = 0
@@ -247,7 +247,7 @@ def place_order():
                 stock = cursor.fetchone()[0]
                 if stock < attributes['quantity']:
                     print("Stock not available")
-                    cursor.execute(f"update Concurrency_Manager set Write_user = 0;")
+                    cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
                     connection.commit()
                     return redirect('/cart_page')
                 
@@ -264,7 +264,7 @@ def place_order():
             connection.commit()
             return redirect('/order_confirmation')
         except:
-            cursor.execute(f"update Concurrency_Manager set Write_user = 0;")
+            cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name like 'Product_Inventory';")
             connection.commit()
             connection.rollback()
             return redirect('/cart_page', status = 'FAIL')
@@ -292,7 +292,7 @@ def category_page():
         if result[2] != 0:
             return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
     
-        cursor.execute(f"update Concurrency_Manager set Read_user = 1;")
+        cursor.execute(f"update Concurrency_Manager set Read_user = 1 where Table_name like 'Product_Inventory';")
         connection.commit()
         category = request.form['category']
         dept  = request.form['department']
@@ -303,7 +303,7 @@ def category_page():
         for row in rows:
             product_dict[row[0]] = {'description': row[2], 'price': row[1], 'image': row[3]}
 
-        cursor.execute(f"update Concurrency_Manager set Read_user = 0;")
+        cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name like 'Product_Inventory';")
         connection.commit()
         return render_template('product_page.html', product_dict=product_dict, category=category, department = dept)
     return render_template('/')
@@ -316,7 +316,7 @@ def product_details():
         if result[2] != 0:
             return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
     
-        cursor.execute(f"update Concurrency_Manager set Read_user = 1;")
+        cursor.execute(f"update Concurrency_Manager set Read_user = 1 where Table_name like 'Product_Inventory';")
         connection.commit()
 
         product_name = request.form['product_name']
@@ -331,7 +331,7 @@ def product_details():
         product_description = result[0]
         image_address = result[1]
 
-        cursor.execute(f"update Concurrency_Manager set Read_user = 0;")
+        cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name like 'Product_Inventory';")
         connection.commit()
         return render_template('product_details_page.html', product_name = product_name, product_price = product_price, sizes = product_sizes, product_description = product_description, image_address = image_address)
 
@@ -350,7 +350,7 @@ def add_to_cart():
     if result[2] != 0:
         return render_template('successful_login.html', message = 'Another user is performing write transaction on the database. Please try again later.')
     
-    cursor.execute(f"update Concurrency_Manager set Read_user = 1;")
+    cursor.execute(f"update Concurrency_Manager set Read_user = 1 where Table_name like 'Product_Inventory';")
     connection.commit()
 
     cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product_name}' and Size = '{size}' and Stock > {quantity};")
@@ -367,13 +367,13 @@ def add_to_cart():
                 cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
                 connection.commit()
 
-            cursor.execute(f"update Concurrency_Manager set Read_user = 0;")
+            cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name like 'Product_Inventory';")
             connection.commit()
         except:
             connection.rollback()
             return render_template('successful_login.html', message = 'Item could not be added!')
     else:
-        cursor.execute(f"update Concurrency_Manager set Read_user = 0;")
+        cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name like 'Product_Inventory';")
         connection.commit()
         return render_template('successful_login.html', message = 'Stock not available!')
     return redirect('/cart_page')
@@ -460,11 +460,55 @@ def manager_home_page():
 
 @app.route('/manager_inventory_page',methods =['GET','POST'])
 def manager_inventory_page():
-    return render_template('Manager_inventory_order.html')
+    error_message  = None
+    if request.method == 'POST':
+        product_id = request.form.get('productId')
+        product_name = request.form.get('productName')
+        category = request.form.get('category')
+        where_clause = []
+        query_params = []
+        if product_id:
+            where_clause.append("product_id = %s")
+            query_params.append(product_id)
+        if product_name:
+            where_clause.append("product_name = %s")
+            query_params.append(product_name)
+        if category:
+            where_clause.append("Category = %s")
+            query_params.append(category)
+        
+        sql_query = "SELECT * FROM product_inventory"
+        if where_clause:
+            sql_query += " WHERE " + " AND ".join(where_clause)
+        cursor.execute(sql_query, tuple(query_params))
+        result = cursor.fetchone()
+        if result:
+            manager_inventory_table_page(sql_query, query_params)
+        else:
+            error_message = "Entered details do not exist in the inventory."
+            return render_template('Manager_inventory_order.html', error_message = error_message)
+    return render_template('Manager_inventory_order.html', error_message = error_message)
 
 
 @app.route('/manager_inventory_table_page',methods =['GET','POST'])
-def manager_inventory_table_page():
+def manager_inventory_table_page(sql_query, query_params):
+    success_message = None
+    if request.method == 'POST':
+        product_id = request.form['productID']
+        quautity = request.form['quantity']
+        cursor.execute("SELECT product_id from product_inventory where product_id = %s",(product_id,))
+        product_id_new = cursor.fetchone()
+        if product_id_new:
+            product_id_new = product_id_new[0]
+            cursor.execute("UPDATE product_inventory SET quantity = quantity + %s where product_id = %s",(quautity,product_id_new))
+            connection.commit()
+            success_message = "Order placed successfully!"
+        else:
+            success_message = "Invalid Product ID. Please enete r a valid ID"
+
+    cursor.execute(sql_query, tuple(query_params))
+    result = cursor.fecthall()
+    print(result)
     return render_template('Manager_inventory_table.html')
 
 @app.route('/manager_alert_page', methods=['GET', 'POST'])
@@ -472,6 +516,14 @@ def manager_alert_page():
     success_message = None
 
     if request.method == 'POST':
+
+        cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Manager_Alert';")
+        result = cursor.fetchone()
+        if not (result[1] == 0 and result[2] == 0):
+            return redirect('/manager_home_page')
+        
+        cursor.execute(f"update Concurrency_Manager set Write_user = 1 where Table_name = 'Manager_Alert';")
+        connection.commit()
         alert_id = request.form['alertId']
         quantity = request.form['quantity']
         cursor.execute("SELECT product_id FROM manager_alert WHERE alert_id = %s and approval='NO'", (alert_id,))
@@ -486,6 +538,18 @@ def manager_alert_page():
         else:
             success_message = "Invalid Alert ID. Please enter a valid ID."
 
+        cursor.execute(f"update Concurrency_Manager set Write_user = 0 where Table_name = 'Manager_Alert';")
+        connection.commit()
+
+    cursor.execute(f"select * from Concurrency_Manager where Table_name = 'Manager_Alert';")
+    result = cursor.fetchone()
+    if not (result[2] == 0):
+        success_message = "Another user is performing write transaction on the database. Please try again later."
+        return render_template('manager_main_page.html', alert_data=[], empty_message=empty_message, success_message=success_message)
+
+    cursor.execute(f"update Concurrency_Manager set Read_user = 1 where Table_name = 'Manager_Alert';")
+    connection.commit()
+
     cursor.execute("SELECT * FROM manager_alert WHERE approval = 'No';")
     alert_temp = cursor.fetchall()
     alert_data = []
@@ -497,6 +561,8 @@ def manager_alert_page():
         alert_data.append(alert_col)
 
     empty_message = "There are currently no alerts in the database." if not alert_data else None
+    cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name = 'Manager_Alert';")
+    connection.commit()
 
     return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
 
