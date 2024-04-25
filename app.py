@@ -234,9 +234,7 @@ def place_order():
             try:
                 current_date = datetime.now().strftime('%Y-%m-%d')
                 cursor.execute(f"insert into Orders values({order_id}, '{current_date}', {delivery_id}, {user_id}, {total_price}, '{payment_status}');")
-                cursor.execute("COMMIT;")
                 cursor.execute(f"insert into Deliveries values({delivery_id}, {order_id}, 'NONE','PENDING',{user_id}, '{address}', '{phone_number}');")
-                cursor.execute("COMMIT;")
                 for product_name, attributes in cart_dict.items():
                     cursor.execute(f"delete from Cart_Items where Cart_ID = 'Cart_{user_id}' and Product_ID = {attributes['product_id']};")
                     cursor.execute("COMMIT;")
@@ -249,9 +247,7 @@ def place_order():
                         return redirect('/cart_page')
                     
                     cursor.execute(f"update Product_Inventory set Stock = Stock - {attributes['quantity']} where Product_ID = {attributes['product_id']};")
-                    cursor.execute("COMMIT;")
                     cursor.execute(f"insert into Order_Items values({order_id}, {attributes['product_id']}, {attributes['quantity']});")
-                    cursor.execute("COMMIT;")
 
             
                 user_details = {'total_price': total_price, 'user_name': user_name, 'date': current_date, 'order_id': order_id, 'delivery_id': delivery_id}
@@ -343,8 +339,8 @@ def add_to_cart():
     product_name = data['name']
     size = data['size']
     quantity = data['quantity']
-    try:
-        with connection.cursor() as cursor:
+    with connection.cursor() as cursor:
+        try:
             cursor.execute("START TRANSACTION;")
             cursor.execute(f"select Product_ID from Product_Inventory where Product_Name = '{product_name}' and Size = '{size}' and Stock > {quantity};")
             if (cursor.rowcount == 1):
@@ -357,16 +353,15 @@ def add_to_cart():
                 else:
                     cursor.execute(f"insert into Cart_Items values('Cart_{user_id}', {product_id}, {quantity});")
                     cursor.execute("COMMIT;")
-                    connection.commit()
             else: 
                 return render_template('successful_login.html', message = 'Stock not available!')
+                
+        except:
+            cursor.execute("ROLLBACK;")
+            return render_template('successful_login.html', message = 'Item could not be added to cart!')
             
-    except:
-        cursor.execute("ROLLBACK;")
-        return render_template('successful_login.html', message = 'Item could not be added to cart!')
-        
-    finally:
-        return redirect('/cart_page')
+        finally:
+            return redirect('/cart_page')
 
 #Non-Conflicting Transaction 3: Removing from Cart
 @app.route('/remove_from_cart', methods=['GET','POST'])
@@ -497,7 +492,6 @@ def manager_inventory_table_page():
             product_id_new = cursor.fetchone()
             if product_id_new:
                 product_id_new = product_id_new[0]
-                cursor.start
                 try:
                     cursor.execute("UPDATE product_inventory SET stock = stock + %s where product_id = %s",(quantity,product_id_new))
                     cursor.execute("COMMIT;")
@@ -587,7 +581,7 @@ def manager_alert_page():
 
         empty_message = "There are currently no alerts in the database." if not alert_data else None
         cursor.execute(f"update Concurrency_Manager set Read_user = 0 where Table_name = 'Manager_Alert';")
-        connection.commit()
+        cursor.execute("COMMIT")
 
         return render_template('manager_main_page.html', alert_data=alert_data, empty_message=empty_message, success_message=success_message)
 
